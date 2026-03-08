@@ -18,16 +18,13 @@ interface Voter {
   id: string;
   name: string;
   address: string;
-  phone: string;
-  email: string;
   party: string;
   sentiment: string;
-  tags: string;
   notes: string;
 }
 
 const emptyVoter: Omit<Voter, "id"> = {
-  name: "", address: "", phone: "", email: "", party: "", sentiment: "neutral", tags: "", notes: "",
+  name: "", address: "", party: "", sentiment: "neutral", notes: "",
 };
 
 export default function VoterDatabase() {
@@ -109,7 +106,7 @@ export default function VoterDatabase() {
   };
 
   const startEdit = (v: Voter) => {
-    setForm({ name: v.name, address: v.address, phone: v.phone, email: v.email, party: v.party, sentiment: v.sentiment, tags: v.tags, notes: v.notes });
+    setForm({ name: v.name, address: v.address, party: v.party, sentiment: v.sentiment, notes: v.notes });
     setEditingId(v.id);
     setOpen(true);
   };
@@ -183,9 +180,6 @@ export default function VoterDatabase() {
               <DialogHeader><DialogTitle>{editingId ? "Edit Voter" : "Add Voter"}</DialogTitle></DialogHeader>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1"><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-                <div className="space-y-1"><Label>Email</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                <div className="col-span-2 space-y-1"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-                <div className="space-y-1"><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
                 <div className="space-y-1"><Label>Party</Label>
                   <Select value={form.party} onValueChange={(v) => setForm({ ...form, party: v })}>
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
@@ -197,7 +191,7 @@ export default function VoterDatabase() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1"><Label>Tags</Label><Input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="comma separated" /></div>
+                <div className="col-span-2 space-y-1"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
                 <div className="space-y-1"><Label>Sentiment</Label>
                   <Select value={form.sentiment} onValueChange={(v) => setForm({ ...form, sentiment: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -208,7 +202,7 @@ export default function VoterDatabase() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-2 space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} /></div>
+                <div className="col-span-2 space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={4} placeholder="Add notes about this voter..." /></div>
               </div>
               <Button variant="gold" className="mt-4 w-full" onClick={handleSave}>Save</Button>
             </DialogContent>
@@ -283,7 +277,7 @@ export default function VoterDatabase() {
               <th className="px-4 py-3 w-10">
                 <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} />
               </th>
-              {["Name", "Address", "Phone", "Party", "Sentiment", "Tags", "Actions"].map((h) => (
+              {["Name", "Address", "Party", "Sentiment", "Notes", "Actions"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left font-medium text-muted-foreground">{h}</th>
               ))}
             </tr>
@@ -296,7 +290,6 @@ export default function VoterDatabase() {
                 </td>
                 <td className="px-4 py-3 font-medium">{v.name}</td>
                 <td className="px-4 py-3 text-muted-foreground">{v.address}</td>
-                <td className="px-4 py-3 text-muted-foreground">{v.phone}</td>
                 <td className="px-4 py-3">{v.party}</td>
                 <td className="px-4 py-3">
                   <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -305,7 +298,7 @@ export default function VoterDatabase() {
                     "bg-primary/20 text-primary"
                   }`}>{v.sentiment}</span>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{v.tags}</td>
+                <td className="px-4 py-3 text-muted-foreground max-w-xs truncate">{v.notes}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => startEdit(v)}><Pencil className="h-4 w-4" /></Button>
@@ -315,7 +308,7 @@ export default function VoterDatabase() {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No voters found</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No voters found</td></tr>
             )}
           </tbody>
         </table>
