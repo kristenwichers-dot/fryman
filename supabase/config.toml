@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.debate-bot]
 verify_jwt = false
+
+[functions.csv-mapper]
+verify_jwt = false
