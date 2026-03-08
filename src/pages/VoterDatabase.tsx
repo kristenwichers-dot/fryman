@@ -39,6 +39,7 @@ export default function VoterDatabase() {
   const [open, setOpen] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [concerns, setConcerns] = useState<{ topic: string; count: number }[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const fetchVoters = async () => {
     const { data } = await supabase.from("voters").select("*").order("name");
