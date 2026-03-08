@@ -14,14 +14,16 @@ import CsvImport from "@/components/CsvImport";
 
 interface Voter {
   id: string;
-  name: string;
-  address: string;
+  last_name: string;
+  first_name: string;
+  street_address: string;
+  city: string;
   party: string;
   notes: string;
 }
 
 const emptyVoter: Omit<Voter, "id"> = {
-  name: "", address: "", party: "", notes: "",
+  last_name: "", first_name: "", street_address: "", city: "", party: "", notes: "",
 };
 
 export default function VoterDatabase() {
@@ -34,8 +36,8 @@ export default function VoterDatabase() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const fetchVoters = async () => {
-    const { data } = await supabase.from("voters").select("*").order("name");
-    if (data) setVoters(data as Voter[]);
+    const { data } = await supabase.from("voters").select("*").order("last_name");
+    if (data) setVoters(data as unknown as Voter[]);
   };
 
   useEffect(() => { fetchVoters(); }, []);
@@ -44,11 +46,26 @@ export default function VoterDatabase() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
     if (editingId) {
-      const { error } = await supabase.from("voters").update(form).eq("id", editingId);
+      const { error } = await supabase.from("voters").update({
+        last_name: form.last_name,
+        first_name: form.first_name,
+        street_address: form.street_address,
+        city: form.city,
+        party: form.party,
+        notes: form.notes,
+      }).eq("id", editingId);
       if (error) { toast.error(error.message); return; }
       toast.success("Voter updated");
     } else {
-      const { error } = await supabase.from("voters").insert({ ...form, user_id: user.id });
+      const { error } = await supabase.from("voters").insert({
+        last_name: form.last_name,
+        first_name: form.first_name,
+        street_address: form.street_address,
+        city: form.city,
+        party: form.party,
+        notes: form.notes,
+        user_id: user.id,
+      });
       if (error) { toast.error(error.message); return; }
       toast.success("Voter added");
     }
@@ -101,13 +118,14 @@ export default function VoterDatabase() {
   };
 
   const startEdit = (v: Voter) => {
-    setForm({ name: v.name, address: v.address, party: v.party, notes: v.notes });
+    setForm({ last_name: v.last_name, first_name: v.first_name, street_address: v.street_address, city: v.city, party: v.party, notes: v.notes });
     setEditingId(v.id);
     setOpen(true);
   };
 
   const filtered = voters.filter((v) => {
-    const matchSearch = v.name.toLowerCase().includes(search.toLowerCase()) || v.address.toLowerCase().includes(search.toLowerCase());
+    const text = `${v.last_name} ${v.first_name} ${v.street_address} ${v.city}`.toLowerCase();
+    const matchSearch = text.includes(search.toLowerCase());
     const matchParty = filterParty === "all" || v.party === filterParty;
     return matchSearch && matchParty;
   });
@@ -142,8 +160,11 @@ export default function VoterDatabase() {
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>{editingId ? "Edit Voter" : "Add Voter"}</DialogTitle></DialogHeader>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1"><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-                <div className="space-y-1"><Label>Party</Label>
+                <div className="space-y-1"><Label>Last Name</Label><Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} /></div>
+                <div className="space-y-1"><Label>First Name</Label><Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} /></div>
+                <div className="space-y-1"><Label>Street Address</Label><Input value={form.street_address} onChange={(e) => setForm({ ...form, street_address: e.target.value })} /></div>
+                <div className="space-y-1"><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+                <div className="col-span-2 space-y-1"><Label>Party Affiliation</Label>
                   <Select value={form.party} onValueChange={(v) => setForm({ ...form, party: v })}>
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>
@@ -154,8 +175,7 @@ export default function VoterDatabase() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-2 space-y-1"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-                <div className="col-span-2 space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={4} placeholder="Add notes about this voter..." /></div>
+                <div className="col-span-2 space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} placeholder="Add notes about this voter..." /></div>
               </div>
               <Button variant="gold" className="mt-4 w-full" onClick={handleSave}>Save</Button>
             </DialogContent>
@@ -207,7 +227,7 @@ export default function VoterDatabase() {
               <th className="px-4 py-3 w-10">
                 <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} />
               </th>
-              {["Name", "Address", "Party", "Notes", "Actions"].map((h) => (
+              {["Last Name", "First Name", "Street Address", "City", "Party", "Notes", "Actions"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left font-medium text-muted-foreground">{h}</th>
               ))}
             </tr>
@@ -218,8 +238,10 @@ export default function VoterDatabase() {
                 <td className="px-4 py-3">
                   <Checkbox checked={selectedIds.has(v.id)} onCheckedChange={() => toggleSelect(v.id)} />
                 </td>
-                <td className="px-4 py-3 font-medium">{v.name}</td>
-                <td className="px-4 py-3 text-muted-foreground">{v.address}</td>
+                <td className="px-4 py-3 font-medium">{v.last_name}</td>
+                <td className="px-4 py-3">{v.first_name}</td>
+                <td className="px-4 py-3 text-muted-foreground">{v.street_address}</td>
+                <td className="px-4 py-3 text-muted-foreground">{v.city}</td>
                 <td className="px-4 py-3">{v.party}</td>
                 <td className="px-4 py-3 text-muted-foreground max-w-xs truncate">{v.notes}</td>
                 <td className="px-4 py-3">
@@ -231,7 +253,7 @@ export default function VoterDatabase() {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No voters found</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No voters found</td></tr>
             )}
           </tbody>
         </table>

@@ -9,18 +9,6 @@ interface CsvImportProps {
   onComplete: () => void;
 }
 
-interface FieldMapping {
-  columnIndices: number[];
-  separator: string;
-}
-
-interface AiMapping {
-  name: FieldMapping | null;
-  address: FieldMapping | null;
-  party: FieldMapping | null;
-  notes: FieldMapping | null;
-}
-
 function parseCsv(text: string): { headers: string[]; rows: string[][] } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length === 0) return { headers: [], rows: [] };
@@ -54,21 +42,15 @@ function parseCsv(text: string): { headers: string[]; rows: string[][] } {
   return { headers, rows };
 }
 
-function applyMapping(row: string[], field: FieldMapping | null): string {
-  if (!field || field.columnIndices.length === 0) return "";
-  return field.columnIndices
-    .map((i) => (row[i] || "").trim())
-    .filter(Boolean)
-    .join(field.separator || " ");
-}
+// Expected CSV column order: Last Name, First Name, Street Address, City, Party Affiliation, Notes
+const EXPECTED_COLUMNS = ["Last Name", "First Name", "Street Address", "City", "Party Affiliation", "Notes"];
 
 export default function CsvImport({ onComplete }: CsvImportProps) {
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<"upload" | "analyzing" | "confirm" | "importing">("upload");
+  const [step, setStep] = useState<"upload" | "confirm" | "importing">("upload");
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<string[][]>([]);
-  const [mapping, setMapping] = useState<AiMapping | null>(null);
-  const [preview, setPreview] = useState<{ name: string; address: string; party: string; notes: string }[]>([]);
+  const [preview, setPreview] = useState<string[][]>([]);
   const [progress, setProgress] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -80,55 +62,19 @@ export default function CsvImport({ onComplete }: CsvImportProps) {
       return;
     }
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev) => {
       const text = ev.target?.result as string;
       const { headers: h, rows: r } = parseCsv(text);
       if (h.length === 0) { toast.error("Empty file"); return; }
       setHeaders(h);
       setRows(r);
-      setStep("analyzing");
-
-      try {
-        const sampleRows = r.slice(0, 5);
-        const { data, error } = await supabase.functions.invoke("csv-mapper", {
-          body: { headers: h, sampleRows },
-        });
-
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-
-        const aiMapping: AiMapping = data.mapping;
-        setMapping(aiMapping);
-
-        // Generate preview from first 3 rows
-        const previewRows = r.slice(0, 3).map((row) => ({
-          name: applyMapping(row, aiMapping.name),
-          address: applyMapping(row, aiMapping.address),
-          party: applyMapping(row, aiMapping.party),
-          notes: applyMapping(row, aiMapping.notes),
-        }));
-        setPreview(previewRows);
-        setStep("confirm");
-      } catch (err: any) {
-        console.error("AI mapping error:", err);
-        toast.error("Failed to analyze CSV: " + (err.message || "Unknown error"));
-        setStep("upload");
-      }
+      setPreview(r.slice(0, 3));
+      setStep("confirm");
     };
     reader.readAsText(file);
   };
 
-  const describeMapping = (field: FieldMapping | null): string => {
-    if (!field || field.columnIndices.length === 0) return "— Not mapped —";
-    return field.columnIndices.map((i) => headers[i] || `Col ${i}`).join(` "${field.separator}" `);
-  };
-
   const handleImport = async () => {
-    if (!mapping?.name || mapping.name.columnIndices.length === 0) {
-      toast.error("No name column mapped");
-      return;
-    }
-
     setStep("importing");
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) { toast.error("Not logged in"); return; }
@@ -139,12 +85,13 @@ export default function CsvImport({ onComplete }: CsvImportProps) {
     for (let i = 0; i < rows.length; i += batchSize) {
       const batch = rows.slice(i, i + batchSize).map((row) => ({
         user_id: user.id,
-        name: applyMapping(row, mapping.name),
-        address: applyMapping(row, mapping.address),
-        party: applyMapping(row, mapping.party),
-        notes: applyMapping(row, mapping.notes),
-        sentiment: "neutral",
-      })).filter((v) => v.name.trim());
+        last_name: (row[0] || "").trim(),
+        first_name: (row[1] || "").trim(),
+        street_address: (row[2] || "").trim(),
+        city: (row[3] || "").trim(),
+        party: (row[4] || "").trim(),
+        notes: (row[5] || "").trim(),
+      })).filter((v) => v.last_name || v.first_name);
 
       if (batch.length > 0) {
         const { error } = await supabase.from("voters").insert(batch);
@@ -167,7 +114,6 @@ export default function CsvImport({ onComplete }: CsvImportProps) {
     setStep("upload");
     setHeaders([]);
     setRows([]);
-    setMapping(null);
     setPreview([]);
     setProgress(0);
     if (fileRef.current) fileRef.current.value = "";
@@ -180,12 +126,11 @@ export default function CsvImport({ onComplete }: CsvImportProps) {
           <Upload className="mr-2 h-4 w-4" />Import CSV
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             {step === "upload" && "Import Voter CSV"}
-            {step === "analyzing" && "Analyzing Your CSV..."}
-            {step === "confirm" && "Review AI Mapping"}
+            {step === "confirm" && "Review Import"}
             {step === "importing" && "Importing..."}
           </DialogTitle>
         </DialogHeader>
@@ -193,8 +138,13 @@ export default function CsvImport({ onComplete }: CsvImportProps) {
         {step === "upload" && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Upload a CSV file. AI will automatically figure out how to map your columns.
+              Upload a CSV with columns in this order:
             </p>
+            <div className="flex flex-wrap gap-2">
+              {EXPECTED_COLUMNS.map((col) => (
+                <span key={col} className="rounded-md bg-secondary px-2.5 py-1 text-xs font-medium">{col}</span>
+              ))}
+            </div>
             <div
               onClick={() => fileRef.current?.click()}
               className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 p-10 cursor-pointer hover:border-primary/40 transition-colors"
@@ -207,28 +157,19 @@ export default function CsvImport({ onComplete }: CsvImportProps) {
           </div>
         )}
 
-        {step === "analyzing" && (
-          <div className="flex flex-col items-center gap-4 py-8">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">AI is analyzing your {rows.length} rows and {headers.length} columns...</p>
-          </div>
-        )}
-
-        {step === "confirm" && mapping && (
+        {step === "confirm" && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Found <span className="font-semibold text-foreground">{rows.length}</span> rows. Here's how AI mapped your columns:
+              Found <span className="font-semibold text-foreground">{rows.length}</span> rows with <span className="font-semibold text-foreground">{headers.length}</span> columns.
             </p>
 
-            <div className="space-y-2 rounded-lg border border-border bg-secondary/20 p-3">
-              {(["name", "address", "party", "notes"] as const).map((field) => (
-                <div key={field} className="flex items-center justify-between text-sm">
-                  <span className="font-medium capitalize">{field}</span>
-                  <span className="text-muted-foreground text-xs max-w-[280px] truncate text-right">
-                    {describeMapping(mapping[field])}
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Column headers from your file:</p>
+              <div className="flex flex-wrap gap-2">
+                {headers.map((h, i) => (
+                  <span key={i} className="rounded-md bg-secondary px-2.5 py-1 text-xs font-medium">{h}</span>
+                ))}
+              </div>
             </div>
 
             {preview.length > 0 && (
@@ -238,19 +179,17 @@ export default function CsvImport({ onComplete }: CsvImportProps) {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border bg-secondary/40">
-                        <th className="p-1.5 text-left font-medium">Name</th>
-                        <th className="p-1.5 text-left font-medium">Address</th>
-                        <th className="p-1.5 text-left font-medium">Party</th>
-                        <th className="p-1.5 text-left font-medium">Notes</th>
+                        {EXPECTED_COLUMNS.map((col) => (
+                          <th key={col} className="p-1.5 text-left font-medium">{col}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
                       {preview.map((row, i) => (
                         <tr key={i} className="border-b border-border/50">
-                          <td className="p-1.5 max-w-[120px] truncate">{row.name || "—"}</td>
-                          <td className="p-1.5 max-w-[120px] truncate">{row.address || "—"}</td>
-                          <td className="p-1.5">{row.party || "—"}</td>
-                          <td className="p-1.5 max-w-[100px] truncate">{row.notes || "—"}</td>
+                          {EXPECTED_COLUMNS.map((_, ci) => (
+                            <td key={ci} className="p-1.5 max-w-[120px] truncate">{row[ci] || "—"}</td>
+                          ))}
                         </tr>
                       ))}
                     </tbody>
@@ -261,7 +200,7 @@ export default function CsvImport({ onComplete }: CsvImportProps) {
 
             <div className="flex gap-2 pt-2">
               <Button variant="outline" className="flex-1" onClick={reset}>
-                <X className="mr-2 h-4 w-4" />Try Again
+                <X className="mr-2 h-4 w-4" />Cancel
               </Button>
               <Button variant="gold" className="flex-1" onClick={handleImport}>
                 <Check className="mr-2 h-4 w-4" />Import {rows.length} Voters
