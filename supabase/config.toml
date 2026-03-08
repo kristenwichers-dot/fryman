@@ -1,0 +1,13 @@
+project_id = "kggminzhorvnbkvkfssc"
+
+[functions.sentiment-analysis]
+verify_jwt = false
+
+[functions.schedule-optimizer]
+verify_jwt = false
+
+[functions.press-release]
+verify_jwt = false
+
+[functions.debate-bot]
+verify_jwt = false
