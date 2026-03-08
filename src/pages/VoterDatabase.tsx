@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Plus, Search, Trash2, Pencil, BarChart3 } from "lucide-react";
 import CsvImport from "@/components/CsvImport";
@@ -37,6 +39,7 @@ export default function VoterDatabase() {
   const [open, setOpen] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [concerns, setConcerns] = useState<{ topic: string; count: number }[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const fetchVoters = async () => {
     const { data } = await supabase.from("voters").select("*").order("name");
@@ -66,6 +69,42 @@ export default function VoterDatabase() {
   const handleDelete = async (id: string) => {
     await supabase.from("voters").delete().eq("id", id);
     toast.success("Voter deleted");
+    fetchVoters();
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((v) => v.id)));
+    }
+  };
+
+  const handleMassDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("voters").delete().in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Deleted ${ids.length} voter(s)`);
+    setSelectedIds(new Set());
+    fetchVoters();
+  };
+
+  const handleDeleteAll = async () => {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return;
+    const { error } = await supabase.from("voters").delete().eq("user_id", user.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("All voters deleted");
+    setSelectedIds(new Set());
     fetchVoters();
   };
 
@@ -119,6 +158,23 @@ export default function VoterDatabase() {
             <BarChart3 className="mr-2 h-4 w-4" />
             {analyzing ? "Analyzing..." : "Run Sentiment Analysis"}
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="mr-2 h-4 w-4" />Delete All
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete all voters?</AlertDialogTitle>
+                <AlertDialogDescription>This will permanently delete every voter in your database. This cannot be undone.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete All</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyVoter); setEditingId(null); } }}>
             <DialogTrigger asChild>
               <Button variant="gold"><Plus className="mr-2 h-4 w-4" />Add Voter</Button>
@@ -184,7 +240,7 @@ export default function VoterDatabase() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 items-center">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Search voters..." value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -198,6 +254,25 @@ export default function VoterDatabase() {
             <SelectItem value="Independent">Independent</SelectItem>
           </SelectContent>
         </Select>
+        {selectedIds.size > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="mr-2 h-4 w-4" />Delete Selected ({selectedIds.size})
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {selectedIds.size} voter(s)?</AlertDialogTitle>
+                <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleMassDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Table */}
@@ -205,6 +280,9 @@ export default function VoterDatabase() {
         <table className="w-full text-sm">
           <thead className="bg-secondary">
             <tr>
+              <th className="px-4 py-3 w-10">
+                <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} />
+              </th>
               {["Name", "Address", "Phone", "Party", "Sentiment", "Tags", "Actions"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left font-medium text-muted-foreground">{h}</th>
               ))}
@@ -213,6 +291,9 @@ export default function VoterDatabase() {
           <tbody className="divide-y divide-border">
             {filtered.map((v) => (
               <tr key={v.id} className="hover:bg-secondary/50 transition-colors">
+                <td className="px-4 py-3">
+                  <Checkbox checked={selectedIds.has(v.id)} onCheckedChange={() => toggleSelect(v.id)} />
+                </td>
                 <td className="px-4 py-3 font-medium">{v.name}</td>
                 <td className="px-4 py-3 text-muted-foreground">{v.address}</td>
                 <td className="px-4 py-3 text-muted-foreground">{v.phone}</td>
@@ -234,7 +315,7 @@ export default function VoterDatabase() {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No voters found</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No voters found</td></tr>
             )}
           </tbody>
         </table>
