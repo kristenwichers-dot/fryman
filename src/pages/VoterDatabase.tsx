@@ -9,22 +9,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Search, Trash2, Pencil, BarChart3 } from "lucide-react";
+import { Plus, Search, Trash2, Pencil } from "lucide-react";
 import CsvImport from "@/components/CsvImport";
-import MetricCard from "@/components/MetricCard";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface Voter {
   id: string;
   name: string;
   address: string;
   party: string;
-  sentiment: string;
   notes: string;
 }
 
 const emptyVoter: Omit<Voter, "id"> = {
-  name: "", address: "", party: "", sentiment: "neutral", notes: "",
+  name: "", address: "", party: "", notes: "",
 };
 
 export default function VoterDatabase() {
@@ -34,8 +31,6 @@ export default function VoterDatabase() {
   const [form, setForm] = useState(emptyVoter);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [concerns, setConcerns] = useState<{ topic: string; count: number }[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const fetchVoters = async () => {
@@ -106,37 +101,9 @@ export default function VoterDatabase() {
   };
 
   const startEdit = (v: Voter) => {
-    setForm({ name: v.name, address: v.address, party: v.party, sentiment: v.sentiment, notes: v.notes });
+    setForm({ name: v.name, address: v.address, party: v.party, notes: v.notes });
     setEditingId(v.id);
     setOpen(true);
-  };
-
-  const runSentimentAnalysis = async () => {
-    setAnalyzing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("sentiment-analysis", {
-        body: { voters: voters.map((v) => ({ id: v.id, notes: v.notes })) },
-      });
-      if (error) throw error;
-      if (data?.concerns) setConcerns(data.concerns);
-      if (data?.updates) {
-        for (const u of data.updates) {
-          await supabase.from("voters").update({ sentiment: u.sentiment }).eq("id", u.id);
-        }
-        fetchVoters();
-      }
-      toast.success("Sentiment analysis complete");
-    } catch (err: any) {
-      toast.error(err.message || "Analysis failed");
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
-  const sentimentCounts = {
-    positive: voters.filter((v) => v.sentiment === "positive").length,
-    neutral: voters.filter((v) => v.sentiment === "neutral").length,
-    negative: voters.filter((v) => v.sentiment === "negative").length,
   };
 
   const filtered = voters.filter((v) => {
@@ -151,10 +118,6 @@ export default function VoterDatabase() {
         <h1 className="text-2xl font-bold">Voter Database</h1>
         <div className="flex gap-2">
           <CsvImport onComplete={fetchVoters} />
-          <Button variant="outline" onClick={runSentimentAnalysis} disabled={analyzing}>
-            <BarChart3 className="mr-2 h-4 w-4" />
-            {analyzing ? "Analyzing..." : "Run Sentiment Analysis"}
-          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm">
@@ -192,44 +155,11 @@ export default function VoterDatabase() {
                   </Select>
                 </div>
                 <div className="col-span-2 space-y-1"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-                <div className="space-y-1"><Label>Sentiment</Label>
-                  <Select value={form.sentiment} onValueChange={(v) => setForm({ ...form, sentiment: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="positive">Positive</SelectItem>
-                      <SelectItem value="neutral">Neutral</SelectItem>
-                      <SelectItem value="negative">Negative</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="col-span-2 space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={4} placeholder="Add notes about this voter..." /></div>
               </div>
               <Button variant="gold" className="mt-4 w-full" onClick={handleSave}>Save</Button>
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
-
-      {/* Sentiment Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <MetricCard label="Positive" value={sentimentCounts.positive} variant="positive" />
-        <MetricCard label="Neutral" value={sentimentCounts.neutral} variant="neutral" />
-        <MetricCard label="Negative" value={sentimentCounts.negative} variant="negative" />
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-sm text-muted-foreground mb-2">Community Concerns</p>
-          {concerns.length > 0 ? (
-            <ResponsiveContainer width="100%" height={100}>
-              <BarChart data={concerns}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(0 0% 14%)" />
-                <XAxis dataKey="topic" tick={{ fill: "hsl(0 0% 55%)", fontSize: 10 }} />
-                <YAxis tick={{ fill: "hsl(0 0% 55%)", fontSize: 10 }} />
-                <Tooltip contentStyle={{ background: "hsl(0 0% 7%)", border: "1px solid hsl(0 0% 14%)" }} />
-                <Bar dataKey="count" fill="hsl(263 70% 58%)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-xs text-muted-foreground">Run analysis to see data</p>
-          )}
         </div>
       </div>
 
@@ -277,7 +207,7 @@ export default function VoterDatabase() {
               <th className="px-4 py-3 w-10">
                 <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} />
               </th>
-              {["Name", "Address", "Party", "Sentiment", "Notes", "Actions"].map((h) => (
+              {["Name", "Address", "Party", "Notes", "Actions"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left font-medium text-muted-foreground">{h}</th>
               ))}
             </tr>
@@ -291,13 +221,6 @@ export default function VoterDatabase() {
                 <td className="px-4 py-3 font-medium">{v.name}</td>
                 <td className="px-4 py-3 text-muted-foreground">{v.address}</td>
                 <td className="px-4 py-3">{v.party}</td>
-                <td className="px-4 py-3">
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                    v.sentiment === "positive" ? "bg-emerald-500/20 text-emerald-400" :
-                    v.sentiment === "negative" ? "bg-red-500/20 text-red-400" :
-                    "bg-primary/20 text-primary"
-                  }`}>{v.sentiment}</span>
-                </td>
                 <td className="px-4 py-3 text-muted-foreground max-w-xs truncate">{v.notes}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1">
@@ -308,7 +231,7 @@ export default function VoterDatabase() {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No voters found</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No voters found</td></tr>
             )}
           </tbody>
         </table>
