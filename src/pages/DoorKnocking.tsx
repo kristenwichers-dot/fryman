@@ -169,7 +169,7 @@ export default function DoorKnocking() {
   const unmapped = voters.filter((v) => !v.lat && v.street_address);
   const center: [number, number] = mappable.length > 0
     ? [mappable[0].lat!, mappable[0].lng!]
-    : [39.8283, -98.5795];
+    : [41.1497, -82.5974]; // Huron County, Ohio
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
