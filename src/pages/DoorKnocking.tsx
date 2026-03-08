@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Search, MapPin, Download, Loader2, CheckCircle2, Clock, Ban } from "lucide-react";
+import { MapPin, Download, Loader2 } from "lucide-react";
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -34,13 +33,12 @@ interface VoterPin {
 }
 
 const STATUS_OPTIONS = [
-  { value: "not_visited", label: "Not Visited", color: "text-muted-foreground" },
-  { value: "contacted", label: "Contacted", color: "text-emerald-400" },
-  { value: "not_home", label: "Not Home", color: "text-amber-400" },
-  { value: "refused", label: "Refused", color: "text-destructive" },
+  { value: "not_visited", label: "Not Visited" },
+  { value: "contacted", label: "Contacted" },
+  { value: "not_home", label: "Not Home" },
+  { value: "refused", label: "Refused" },
 ];
 
-// Simple geocode using Nominatim (free, no key needed)
 async function geocodeAddress(street: string, city: string): Promise<{ lat: number; lng: number } | null> {
   try {
     const q = encodeURIComponent(`${street}, ${city}`);
@@ -55,9 +53,7 @@ async function geocodeAddress(street: string, city: string): Promise<{ lat: numb
 
 export default function DoorKnocking() {
   const [voters, setVoters] = useState<VoterPin[]>([]);
-  const [search, setSearch] = useState("");
-  const [filterCity, setFilterCity] = useState("all");
-  const [showMap, setShowMap] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [geocoding, setGeocoding] = useState(false);
   const [logModal, setLogModal] = useState<VoterPin | null>(null);
   const [logNote, setLogNote] = useState("");
@@ -102,27 +98,30 @@ export default function DoorKnocking() {
         })
       );
     }
+    setLoading(false);
   };
 
   useEffect(() => { fetchVoters(); }, []);
 
-  const handleShowMap = async () => {
-    // Geocode any voters missing lat/lng
+  const handleLoadPins = async () => {
     const needGeocode = voters.filter((v) => !v.lat && v.street_address);
-    if (needGeocode.length > 0) {
-      setGeocoding(true);
-      for (const v of needGeocode) {
-        const result = await geocodeAddress(v.street_address, v.city);
-        if (result) {
-          await supabase.from("voters").update({ lat: result.lat, lng: result.lng }).eq("id", v.id);
-        }
-        // Small delay to respect Nominatim rate limit
-        await new Promise((r) => setTimeout(r, 1100));
-      }
-      await fetchVoters();
-      setGeocoding(false);
+    if (needGeocode.length === 0) {
+      toast.info("All voters already mapped");
+      return;
     }
-    setShowMap(true);
+    setGeocoding(true);
+    let count = 0;
+    for (const v of needGeocode) {
+      const result = await geocodeAddress(v.street_address, v.city);
+      if (result) {
+        await supabase.from("voters").update({ lat: result.lat, lng: result.lng }).eq("id", v.id);
+        count++;
+      }
+      await new Promise((r) => setTimeout(r, 1100));
+    }
+    await fetchVoters();
+    setGeocoding(false);
+    toast.success(`Mapped ${count} of ${needGeocode.length} addresses`);
   };
 
   const updateStatus = async (voter: VoterPin, newStatus: string) => {
@@ -153,7 +152,7 @@ export default function DoorKnocking() {
 
   const downloadWalkList = () => {
     const header = "Stop,Last Name,First Name,Street Address,City,Party,Status,Notes\n";
-    const rows = filtered.map((v, i) =>
+    const rows = voters.map((v, i) =>
       [i + 1, v.last_name, v.first_name, `"${v.street_address}"`, v.city, v.party, v.status.replace("_", " "), `"${v.log_notes}"`].join(",")
     ).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
@@ -166,71 +165,51 @@ export default function DoorKnocking() {
     toast.success("Walk list downloaded");
   };
 
-  const cities = [...new Set(voters.map((r) => r.city).filter(Boolean))];
-
-  const filtered = voters.filter((r) => {
-    const text = `${r.last_name} ${r.first_name} ${r.street_address} ${r.city}`.toLowerCase();
-    const matchSearch = text.includes(search.toLowerCase());
-    const matchCity = filterCity === "all" || r.city === filterCity;
-    return matchSearch && matchCity;
-  });
-
-  const mappable = filtered.filter((v) => v.lat && v.lng);
+  const mappable = voters.filter((v) => v.lat && v.lng);
+  const unmapped = voters.filter((v) => !v.lat && v.street_address);
   const center: [number, number] = mappable.length > 0
     ? [mappable[0].lat!, mappable[0].lng!]
-    : [39.8283, -98.5795]; // US center fallback
-
-  const stats = {
-    total: filtered.length,
-    visited: filtered.filter((r) => r.status !== "not_visited").length,
-  };
+    : [39.8283, -98.5795];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-[calc(100vh-64px)]">
+      {/* Top bar */}
+      <div className="flex items-center justify-between p-4 border-b border-border bg-card">
         <div>
-          <h1 className="text-2xl font-bold">Door Knocking</h1>
-          <p className="text-sm text-muted-foreground">
-            {stats.total} voters • {stats.visited} visited
+          <h1 className="text-lg font-bold">Door Knocking</h1>
+          <p className="text-xs text-muted-foreground">
+            {mappable.length} pins on map • {voters.length} total voters
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleShowMap}
-            disabled={geocoding || voters.length === 0}
-          >
-            {geocoding ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mapping...</>
-            ) : (
-              <><MapPin className="mr-2 h-4 w-4" />{showMap ? "Refresh Map" : "Show on Map"}</>
-            )}
-          </Button>
-          <Button variant="outline" onClick={downloadWalkList} disabled={filtered.length === 0}>
-            <Download className="mr-2 h-4 w-4" />Download Walk List
+          {unmapped.length > 0 && (
+            <Button size="sm" onClick={handleLoadPins} disabled={geocoding}>
+              {geocoding ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mapping {unmapped.length}...</>
+              ) : (
+                <><MapPin className="mr-2 h-4 w-4" />Load {unmapped.length} Pins</>
+              )}
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={downloadWalkList} disabled={voters.length === 0}>
+            <Download className="mr-2 h-4 w-4" />Walk List
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 items-center">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Search voters..." value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
-        <Select value={filterCity} onValueChange={setFilterCity}>
-          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Cities</SelectItem>
-            {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Map */}
-      {showMap && (
-        <div className="rounded-xl border border-border overflow-hidden" style={{ height: 400 }}>
-          <MapContainer center={center} zoom={12} className="h-full w-full" style={{ background: "hsl(var(--background))" }}>
+      {/* Full map */}
+      <div className="flex-1">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : voters.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <MapPin className="h-12 w-12 text-muted-foreground" />
+            <p className="text-muted-foreground">Add voters to your database first</p>
+          </div>
+        ) : (
+          <MapContainer center={center} zoom={12} className="h-full w-full" style={{ background: "hsl(0 0% 4%)" }}>
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
               attribution='&copy; <a href="https://carto.com/">CARTO</a>'
@@ -238,50 +217,42 @@ export default function DoorKnocking() {
             {mappable.map((v) => (
               <Marker key={v.id} position={[v.lat!, v.lng!]}>
                 <Popup>
-                  <strong>{v.last_name}, {v.first_name}</strong><br />
-                  {v.street_address}, {v.city}<br />
-                  <em>{v.status.replace("_", " ")}</em>
+                  <div style={{ minWidth: 180 }}>
+                    <strong>{v.last_name}, {v.first_name}</strong><br />
+                    <span style={{ fontSize: 12, color: "#999" }}>{v.street_address}, {v.city}</span><br />
+                    <span style={{ fontSize: 12 }}>Party: {v.party || "—"}</span><br />
+                    <div style={{ marginTop: 6, display: "flex", gap: 4 }}>
+                      {STATUS_OPTIONS.map((s) => (
+                        <button
+                          key={s.value}
+                          onClick={() => updateStatus(v, s.value)}
+                          style={{
+                            padding: "2px 6px",
+                            fontSize: 11,
+                            border: "1px solid #555",
+                            borderRadius: 4,
+                            background: v.status === s.value ? "#7C3AED" : "transparent",
+                            color: v.status === s.value ? "#fff" : "#ccc",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => { setLogModal(v); setLogNote(v.log_notes); }}
+                      style={{ marginTop: 6, fontSize: 11, color: "#a78bfa", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                    >
+                      {v.log_notes ? "✏️ Edit Note" : "📝 Add Note"}
+                    </button>
+                  </div>
                 </Popup>
               </Marker>
             ))}
           </MapContainer>
-        </div>
-      )}
-
-      {/* Voter list */}
-      {voters.length === 0 ? (
-        <div className="rounded-xl border border-border p-12 text-center">
-          <MapPin className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground">No voters in your database yet.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((v, i) => {
-            const statusInfo = STATUS_OPTIONS.find((s) => s.value === v.status) || STATUS_OPTIONS[0];
-            return (
-              <div key={v.id} className="flex items-center gap-4 rounded-lg border border-border bg-card p-3 hover:bg-secondary/30 transition-colors">
-                <span className="text-xs font-mono text-muted-foreground w-6 text-right">{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{v.last_name}, {v.first_name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{v.street_address}, {v.city}</p>
-                </div>
-                <span className="text-xs text-muted-foreground hidden sm:block">{v.party}</span>
-                <Select value={v.status} onValueChange={(val) => updateStatus(v, val)}>
-                  <SelectTrigger className="h-7 text-xs w-32">
-                    <span className={statusInfo.color}><SelectValue /></span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setLogModal(v); setLogNote(v.log_notes); }}>
-                  {v.log_notes ? "Edit Note" : "Add Note"}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+        )}
+      </div>
 
       <Dialog open={!!logModal} onOpenChange={(o) => !o && setLogModal(null)}>
         <DialogContent>
