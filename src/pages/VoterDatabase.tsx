@@ -72,6 +72,42 @@ export default function VoterDatabase() {
     fetchVoters();
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((v) => v.id)));
+    }
+  };
+
+  const handleMassDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("voters").delete().in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Deleted ${ids.length} voter(s)`);
+    setSelectedIds(new Set());
+    fetchVoters();
+  };
+
+  const handleDeleteAll = async () => {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return;
+    const { error } = await supabase.from("voters").delete().eq("user_id", user.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("All voters deleted");
+    setSelectedIds(new Set());
+    fetchVoters();
+  };
+
   const startEdit = (v: Voter) => {
     setForm({ name: v.name, address: v.address, phone: v.phone, email: v.email, party: v.party, sentiment: v.sentiment, tags: v.tags, notes: v.notes });
     setEditingId(v.id);
