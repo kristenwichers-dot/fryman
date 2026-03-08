@@ -240,7 +240,7 @@ export default function VoterDatabase() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 items-center">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Search voters..." value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -254,6 +254,25 @@ export default function VoterDatabase() {
             <SelectItem value="Independent">Independent</SelectItem>
           </SelectContent>
         </Select>
+        {selectedIds.size > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="mr-2 h-4 w-4" />Delete Selected ({selectedIds.size})
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {selectedIds.size} voter(s)?</AlertDialogTitle>
+                <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleMassDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Table */}
@@ -261,6 +280,9 @@ export default function VoterDatabase() {
         <table className="w-full text-sm">
           <thead className="bg-secondary">
             <tr>
+              <th className="px-4 py-3 w-10">
+                <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} />
+              </th>
               {["Name", "Address", "Phone", "Party", "Sentiment", "Tags", "Actions"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left font-medium text-muted-foreground">{h}</th>
               ))}
@@ -269,6 +291,9 @@ export default function VoterDatabase() {
           <tbody className="divide-y divide-border">
             {filtered.map((v) => (
               <tr key={v.id} className="hover:bg-secondary/50 transition-colors">
+                <td className="px-4 py-3">
+                  <Checkbox checked={selectedIds.has(v.id)} onCheckedChange={() => toggleSelect(v.id)} />
+                </td>
                 <td className="px-4 py-3 font-medium">{v.name}</td>
                 <td className="px-4 py-3 text-muted-foreground">{v.address}</td>
                 <td className="px-4 py-3 text-muted-foreground">{v.phone}</td>
@@ -290,7 +315,7 @@ export default function VoterDatabase() {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No voters found</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No voters found</td></tr>
             )}
           </tbody>
         </table>
