@@ -19,12 +19,11 @@ interface Voter {
   name: string;
   address: string;
   party: string;
-  sentiment: string;
   notes: string;
 }
 
 const emptyVoter: Omit<Voter, "id"> = {
-  name: "", address: "", party: "", sentiment: "neutral", notes: "",
+  name: "", address: "", party: "", notes: "",
 };
 
 export default function VoterDatabase() {
@@ -34,8 +33,6 @@ export default function VoterDatabase() {
   const [form, setForm] = useState(emptyVoter);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [concerns, setConcerns] = useState<{ topic: string; count: number }[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const fetchVoters = async () => {
@@ -106,7 +103,7 @@ export default function VoterDatabase() {
   };
 
   const startEdit = (v: Voter) => {
-    setForm({ name: v.name, address: v.address, party: v.party, sentiment: v.sentiment, notes: v.notes });
+    setForm({ name: v.name, address: v.address, party: v.party, notes: v.notes });
     setEditingId(v.id);
     setOpen(true);
   };
