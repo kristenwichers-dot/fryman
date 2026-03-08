@@ -158,6 +158,23 @@ export default function VoterDatabase() {
             <BarChart3 className="mr-2 h-4 w-4" />
             {analyzing ? "Analyzing..." : "Run Sentiment Analysis"}
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="mr-2 h-4 w-4" />Delete All
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete all voters?</AlertDialogTitle>
+                <AlertDialogDescription>This will permanently delete every voter in your database. This cannot be undone.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete All</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyVoter); setEditingId(null); } }}>
             <DialogTrigger asChild>
               <Button variant="gold"><Plus className="mr-2 h-4 w-4" />Add Voter</Button>
