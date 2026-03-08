@@ -151,9 +151,12 @@ export type Database = {
       voters: {
         Row: {
           address: string
+          city: string
           created_at: string
           email: string | null
+          first_name: string
           id: string
+          last_name: string
           lat: number | null
           lng: number | null
           name: string
@@ -161,15 +164,19 @@ export type Database = {
           party: string | null
           phone: string | null
           sentiment: string | null
+          street_address: string
           tags: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           address?: string
+          city?: string
           created_at?: string
           email?: string | null
+          first_name?: string
           id?: string
+          last_name?: string
           lat?: number | null
           lng?: number | null
           name?: string
@@ -177,15 +184,19 @@ export type Database = {
           party?: string | null
           phone?: string | null
           sentiment?: string | null
+          street_address?: string
           tags?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           address?: string
+          city?: string
           created_at?: string
           email?: string | null
+          first_name?: string
           id?: string
+          last_name?: string
           lat?: number | null
           lng?: number | null
           name?: string
@@ -193,6 +204,7 @@ export type Database = {
           party?: string | null
           phone?: string | null
           sentiment?: string | null
+          street_address?: string
           tags?: string | null
           updated_at?: string
           user_id?: string

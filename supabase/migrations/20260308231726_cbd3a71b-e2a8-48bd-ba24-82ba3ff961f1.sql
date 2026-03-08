@@ -1,0 +1,6 @@
+
+ALTER TABLE public.voters
+  ADD COLUMN IF NOT EXISTS first_name text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS last_name text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS street_address text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS city text NOT NULL DEFAULT '';
