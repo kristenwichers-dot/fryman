@@ -34,7 +34,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         <div className="flex h-14 items-center justify-between border-b border-border px-3">
           {!collapsed && (
-            <span className="text-lg font-bold text-primary">Campaign HQ</span>
+            <NavLink to="/" className="text-lg font-bold text-primary hover:text-primary/80 transition-colors">
+              Campaign HQ
+            </NavLink>
+          )}
+          {collapsed && (
+            <NavLink to="/" className="text-primary hover:text-primary/80 transition-colors">
+              <LayoutDashboard className="h-5 w-5" />
+            </NavLink>
           )}
           <Button
             variant="ghost"
