@@ -3,13 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Plus, Search, Trash2, Pencil } from "lucide-react";
+import { Plus, Search, Trash2, Pencil, ChevronDown } from "lucide-react";
 import CsvImport from "@/components/CsvImport";
 
 interface Voter {
@@ -34,6 +35,7 @@ export default function VoterDatabase() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
 
   const fetchVoters = async () => {
     const { data } = await supabase.from("voters").select("*").order("last_name");
@@ -136,12 +138,25 @@ export default function VoterDatabase() {
         <h1 className="text-2xl font-bold">Voter Database</h1>
         <div className="flex gap-2">
           <CsvImport onComplete={fetchVoters} />
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="mr-2 h-4 w-4" />Delete All
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                Actions <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
               </Button>
-            </AlertDialogTrigger>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />Add Voter
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setDeleteAllOpen(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />Delete All
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <AlertDialog open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete all voters?</AlertDialogTitle>
@@ -154,9 +169,6 @@ export default function VoterDatabase() {
             </AlertDialogContent>
           </AlertDialog>
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyVoter); setEditingId(null); } }}>
-            <DialogTrigger asChild>
-              <Button variant="gold"><Plus className="mr-2 h-4 w-4" />Add Voter</Button>
-            </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>{editingId ? "Edit Voter" : "Add Voter"}</DialogTitle></DialogHeader>
               <div className="grid grid-cols-2 gap-4">
