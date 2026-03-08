@@ -38,7 +38,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
-  return <>{children}</>;
+  return <DashboardLayout>{children}</DashboardLayout>;
 }
 
 const App = () => (
@@ -49,24 +49,13 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
-          <Route
-            path="/*"
-            element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Routes>
-                    <Route path="/" element={<Navigate to="/voters" replace />} />
-                    <Route path="/voters" element={<VoterDatabase />} />
-                    <Route path="/door-knocking" element={<DoorKnocking />} />
-                    <Route path="/events" element={<EventsScheduler />} />
-                    <Route path="/press-release" element={<PressRelease />} />
-                    <Route path="/debate-prep" element={<DebatePrep />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </DashboardLayout>
-              </AuthGuard>
-            }
-          />
+          <Route path="/" element={<Navigate to="/voters" replace />} />
+          <Route path="/voters" element={<AuthGuard><VoterDatabase /></AuthGuard>} />
+          <Route path="/door-knocking" element={<AuthGuard><DoorKnocking /></AuthGuard>} />
+          <Route path="/events" element={<AuthGuard><EventsScheduler /></AuthGuard>} />
+          <Route path="/press-release" element={<AuthGuard><PressRelease /></AuthGuard>} />
+          <Route path="/debate-prep" element={<AuthGuard><DebatePrep /></AuthGuard>} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
