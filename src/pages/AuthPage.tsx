@@ -21,7 +21,7 @@ export default function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Logged in!");
-        navigate("/voters");
+        navigate("/");
       } else {
         const { error } = await supabase.auth.signUp({
           email,
