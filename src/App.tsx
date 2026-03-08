@@ -14,13 +14,6 @@ import EventsScheduler from "./pages/EventsScheduler";
 import PressRelease from "./pages/PressRelease";
 import DebatePrep from "./pages/DebatePrep";
 import NotFound from "./pages/NotFound";
-import DashboardLayout from "./components/DashboardLayout";
-import VoterDatabase from "./pages/VoterDatabase";
-import DoorKnocking from "./pages/DoorKnocking";
-import EventsScheduler from "./pages/EventsScheduler";
-import PressRelease from "./pages/PressRelease";
-import DebatePrep from "./pages/DebatePrep";
-import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -57,7 +50,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/" element={<Navigate to="/voters" replace />} />
+          <Route path="/" element={<AuthGuard><LandingPage /></AuthGuard>} />
           <Route path="/voters" element={<AuthGuard><VoterDatabase /></AuthGuard>} />
           <Route path="/door-knocking" element={<AuthGuard><DoorKnocking /></AuthGuard>} />
           <Route path="/events" element={<AuthGuard><EventsScheduler /></AuthGuard>} />
