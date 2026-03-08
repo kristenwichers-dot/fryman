@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Search, Trash2, Pencil, BarChart3 } from "lucide-react";
+import CsvImport from "@/components/CsvImport";
 import MetricCard from "@/components/MetricCard";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -113,6 +114,7 @@ export default function VoterDatabase() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Voter Database</h1>
         <div className="flex gap-2">
+          <CsvImport onComplete={fetchVoters} />
           <Button variant="outline" onClick={runSentimentAnalysis} disabled={analyzing}>
             <BarChart3 className="mr-2 h-4 w-4" />
             {analyzing ? "Analyzing..." : "Run Sentiment Analysis"}
