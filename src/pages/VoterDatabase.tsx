@@ -28,6 +28,7 @@ const emptyVoter: Omit<Voter, "id"> = {
 };
 
 export default function VoterDatabase() {
+
   const [voters, setVoters] = useState<Voter[]>([]);
   const [search, setSearch] = useState("");
   const [filterParty, setFilterParty] = useState("all");
