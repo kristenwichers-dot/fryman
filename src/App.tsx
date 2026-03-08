@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AuthPage from "./pages/AuthPage";
 import DashboardLayout from "./components/DashboardLayout";
+import LandingPage from "./pages/LandingPage";
 import VoterDatabase from "./pages/VoterDatabase";
 import DoorKnocking from "./pages/DoorKnocking";
 import EventsScheduler from "./pages/EventsScheduler";
@@ -49,7 +50,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/" element={<Navigate to="/voters" replace />} />
+          <Route path="/" element={<AuthGuard><LandingPage /></AuthGuard>} />
           <Route path="/voters" element={<AuthGuard><VoterDatabase /></AuthGuard>} />
           <Route path="/door-knocking" element={<AuthGuard><DoorKnocking /></AuthGuard>} />
           <Route path="/events" element={<AuthGuard><EventsScheduler /></AuthGuard>} />
