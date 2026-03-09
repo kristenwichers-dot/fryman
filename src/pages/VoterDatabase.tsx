@@ -32,6 +32,7 @@ export default function VoterDatabase() {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [search, setSearch] = useState("");
   const [filterParty, setFilterParty] = useState("all");
+  const [sortBy, setSortBy] = useState<"last_name" | "first_name" | "city" | "party">("last_name");
   const [form, setForm] = useState(emptyVoter);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
