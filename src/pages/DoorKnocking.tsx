@@ -50,12 +50,24 @@ export default function DoorKnocking() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
 
-    const { data: voterData } = await supabase
-      .from("voters")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("city")
-      .order("street_address");
+    // Paginate to fetch all voters beyond the 1000-row default limit
+    const allVoters: any[] = [];
+    const batchSize = 1000;
+    let from = 0;
+    while (true) {
+      const { data: batch } = await supabase
+        .from("voters")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("city")
+        .order("street_address")
+        .range(from, from + batchSize - 1);
+      if (!batch || batch.length === 0) break;
+      allVoters.push(...batch);
+      if (batch.length < batchSize) break;
+      from += batchSize;
+    }
+    const voterData = allVoters;
 
     const { data: logs } = await supabase
       .from("door_knocking_logs")
