@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Users, MapPin, Calendar, FileText, MessageSquare, ArrowRight } from "lucide-react";
+import { Users, MapPin, Calendar, FileText, MessageSquare, ArrowRight, SignpostBig } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
@@ -33,6 +33,12 @@ const sections = [
     icon: MessageSquare,
     title: "Debate Prep Bot",
     desc: "Practice debates against a configurable AI opponent to sharpen your arguments.",
+  },
+  {
+    to: "/yard-signs",
+    icon: SignpostBig,
+    title: "Yard Sign List",
+    desc: "Track yard sign requests and mark them delivered with a simple checklist.",
   },
 ];
 
