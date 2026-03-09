@@ -56,6 +56,42 @@ export default function DebatePrep() {
   useEffect(() => { fetchHistory(); }, []);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  const handleClear = async () => {
+    setClearing(true);
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error("Not logged in");
+      const { error } = await supabase.from("chat_history").delete().eq("user_id", user.id);
+      if (error) throw error;
+      setMessages([]);
+      setShowClearConfirm(false);
+      toast.success("Debate session cleared — ready for a new one!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to clear session");
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (messages.length === 0) {
+      toast.error("No messages to save.");
+      return;
+    }
+    const lines = messages.map((m) =>
+      `[${m.role === "user" ? "You" : persona.opponentName}]\n${m.content}`
+    );
+    const text = `Debate Prep Session\nOpponent: ${persona.opponentName} (${persona.politicalLeaning})\n\n${lines.join("\n\n---\n\n")}`;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `debate-session-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Session saved as text file!");
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
     const userMsg: Message = { role: "user", content: input };
