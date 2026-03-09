@@ -229,6 +229,22 @@ export default function DebatePrep() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Clear Confirm */}
+      <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Start a New Debate?</DialogTitle>
+            <DialogDescription>This will permanently delete the current conversation. Save it first using the download button if you want to keep it.</DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowClearConfirm(false)}>Cancel</Button>
+            <Button variant="destructive" className="flex-1" onClick={handleClear} disabled={clearing}>
+              {clearing ? "Clearing..." : "Clear & Start New"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
