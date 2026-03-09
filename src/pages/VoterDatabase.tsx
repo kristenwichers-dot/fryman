@@ -127,12 +127,18 @@ export default function VoterDatabase() {
     setOpen(true);
   };
 
-  const filtered = voters.filter((v) => {
-    const text = `${v.last_name} ${v.first_name} ${v.street_address} ${v.city}`.toLowerCase();
-    const matchSearch = text.includes(search.toLowerCase());
-    const matchParty = filterParty === "all" || v.party === filterParty;
-    return matchSearch && matchParty;
-  });
+  const filtered = voters
+    .filter((v) => {
+      const text = `${v.last_name} ${v.first_name} ${v.street_address} ${v.city}`.toLowerCase();
+      const matchSearch = text.includes(search.toLowerCase());
+      const matchParty = filterParty === "all" || v.party === filterParty;
+      return matchSearch && matchParty;
+    })
+    .sort((a, b) => {
+      const aVal = (a[sortBy] || "").toLowerCase();
+      const bVal = (b[sortBy] || "").toLowerCase();
+      return aVal.localeCompare(bVal);
+    });
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
