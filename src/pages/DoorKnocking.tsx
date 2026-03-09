@@ -46,6 +46,7 @@ export default function DoorKnocking() {
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiOrderedIndices, setAiOrderedIndices] = useState<number[] | null>(null);
 
   const fetchVoters = async () => {
     const user = (await supabase.auth.getUser()).data.user;
@@ -188,10 +189,53 @@ export default function DoorKnocking() {
     toast.success("Walk list downloaded as PDF");
   };
 
+  const downloadOptimizedPDF = () => {
+    if (!aiOrderedIndices || !selectedCity) return;
+    const orderedVoters = aiOrderedIndices.map((i) => cityVoters[i]).filter(Boolean);
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Optimized Walk List — ${selectedCity}`, 14, 16);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`AI-Optimized · Generated ${new Date().toLocaleDateString()}`, 14, 22);
+    doc.setTextColor(0);
+
+    const tableRows: string[][] = [];
+    let stopNum = 0;
+    let lastAddr = "";
+    orderedVoters.forEach((v) => {
+      const addr = v.street_address.trim().toUpperCase();
+      if (addr !== lastAddr) { stopNum++; lastAddr = addr; }
+      const party = v.party ? ` (${v.party.charAt(0).toUpperCase()})` : "";
+      tableRows.push([String(stopNum), v.street_address, `${v.first_name} ${v.last_name}${party}`, "", ""]);
+    });
+
+    autoTable(doc, {
+      startY: 27,
+      head: [["#", "Address", "Voter", "Status", "Notes"]],
+      body: tableRows,
+      styles: { fontSize: 8, cellPadding: 3, valign: "top" },
+      headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: "bold", lineWidth: 0.3, lineColor: 180 },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 52 },
+        2: { cellWidth: 55 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 45 },
+      },
+      theme: "grid",
+    });
+    doc.save(`optimized-walk-list-${selectedCity.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success("Optimized walk list downloaded");
+  };
+
   const optimizeWalkList = async () => {
     if (!selectedCity) return;
     setAiLoading(true);
     setAiSuggestion(null);
+    setAiOrderedIndices(null);
     setAiDialogOpen(true);
     try {
       const { data, error } = await supabase.functions.invoke("walk-list-optimizer", {
@@ -200,6 +244,7 @@ export default function DoorKnocking() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setAiSuggestion(data.suggestion);
+      if (Array.isArray(data.orderedIndices)) setAiOrderedIndices(data.orderedIndices);
     } catch (e: any) {
       toast.error(e.message || "Failed to optimize walk list");
       setAiDialogOpen(false);
@@ -376,9 +421,17 @@ export default function DoorKnocking() {
               <span className="text-sm text-muted-foreground">Analyzing voters and optimizing route…</span>
             </div>
           ) : (
-            <div className="prose prose-sm prose-invert max-w-none">
-              <ReactMarkdown>{aiSuggestion || ""}</ReactMarkdown>
-            </div>
+            <>
+              <div className="prose prose-sm prose-invert max-w-none">
+                <ReactMarkdown>{aiSuggestion || ""}</ReactMarkdown>
+              </div>
+              {aiOrderedIndices && (
+                <Button variant="gold" onClick={downloadOptimizedPDF} className="w-full mt-2">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Optimized PDF
+                </Button>
+              )}
+            </>
           )}
         </DialogContent>
       </Dialog>
