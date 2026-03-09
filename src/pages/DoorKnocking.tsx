@@ -56,7 +56,6 @@ export default function DoorKnocking() {
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [aiOrderedIndices, setAiOrderedIndices] = useState<number[] | null>(null);
 
-  // Fetch only city summaries on mount (single fast query)
   const fetchCities = useCallback(async () => {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
@@ -67,7 +66,6 @@ export default function DoorKnocking() {
     setLoading(false);
   }, []);
 
-  // Fetch voters only for the selected city
   const fetchCityVoters = useCallback(async (city: string) => {
     setCityLoading(true);
     const user = (await supabase.auth.getUser()).data.user;
@@ -91,7 +89,6 @@ export default function DoorKnocking() {
     }
 
     const voterIds = allVoters.map((v) => v.id);
-    // Fetch logs for these voters only
     let allLogs: any[] = [];
     for (let i = 0; i < voterIds.length; i += 1000) {
       const chunk = voterIds.slice(i, i + 1000);
@@ -283,19 +280,19 @@ export default function DoorKnocking() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+      <div className="flex items-center justify-center h-[calc(100vh-56px)] md:h-[calc(100vh-64px)]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  // ── City grid view ───────────────────────────────────────────────
+  // City grid view
   if (!selectedCity) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Door Knocking</h1>
+            <h1 className="text-xl md:text-2xl font-bold">Door Knocking</h1>
             <p className="text-sm text-muted-foreground">{totalVoters} voters across {citiesSummary.length} cities</p>
           </div>
         </div>
@@ -306,12 +303,12 @@ export default function DoorKnocking() {
             <p className="text-muted-foreground">Add voters to your database first</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {citiesSummary.map((cs) => (
               <button
                 key={cs.city}
                 onClick={() => setSelectedCity(cs.city)}
-                className="flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-5 text-left hover:border-primary/60 hover:bg-primary/5 transition-all duration-200 group"
+                className="flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-4 md:p-5 text-left hover:border-primary/60 hover:bg-primary/5 transition-all duration-200 group"
               >
                 <div className="flex items-center gap-2 w-full">
                   <MapPin className="h-4 w-4 text-primary shrink-0" />
@@ -336,33 +333,36 @@ export default function DoorKnocking() {
     );
   }
 
-  // ── Voter list view for selected city ───────────────────────────
+  // Voter list view for selected city
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="flex flex-col h-[calc(100vh-56px)] md:h-[calc(100vh-64px)]">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-card shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 md:p-4 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => { setSelectedCity(null); fetchCities(); }}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-lg font-bold">{selectedCity}</h1>
+            <h1 className="text-base md:text-lg font-bold">{selectedCity}</h1>
             <p className="text-xs text-muted-foreground">{cityLoading ? "Loading…" : `${cityVoters.length} voters`}</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" onClick={optimizeWalkList} disabled={aiLoading || cityLoading}>
+        <div className="flex gap-2 ml-10 sm:ml-0">
+          <Button size="sm" onClick={optimizeWalkList} disabled={aiLoading || cityLoading} className="flex-1 sm:flex-none">
             <Sparkles className="mr-2 h-4 w-4" />
-            {aiLoading ? "Optimizing..." : "AI Optimize"}
+            <span className="hidden sm:inline">{aiLoading ? "Optimizing..." : "AI Optimize"}</span>
+            <span className="sm:hidden">Optimize</span>
           </Button>
-          <Button size="sm" variant="outline" onClick={downloadWalkList} disabled={cityLoading}>
-            <Download className="mr-2 h-4 w-4" />Walk List
+          <Button size="sm" variant="outline" onClick={downloadWalkList} disabled={cityLoading} className="flex-1 sm:flex-none">
+            <Download className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Walk List</span>
+            <span className="sm:hidden">PDF</span>
           </Button>
         </div>
       </div>
 
       {/* Voter list */}
-      <div className="flex-1 overflow-auto p-4 space-y-2">
+      <div className="flex-1 overflow-auto p-3 md:p-4 space-y-2">
         {cityLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -373,7 +373,7 @@ export default function DoorKnocking() {
           cityVoters.map((v) => (
             <div
               key={v.id}
-              className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-lg border border-border bg-card px-3 md:px-4 py-3"
             >
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">{v.last_name}, {v.first_name}</p>
@@ -387,7 +387,7 @@ export default function DoorKnocking() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <Select value={v.status} onValueChange={(val) => updateStatus(v, val)}>
-                  <SelectTrigger className={`h-7 text-xs border w-32 ${STATUS_COLORS[v.status] || ""}`}>
+                  <SelectTrigger className={`h-7 text-xs border w-full sm:w-28 ${STATUS_COLORS[v.status] || ""}`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -401,7 +401,7 @@ export default function DoorKnocking() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 px-2 text-xs"
+                  className="h-7 px-2 text-xs shrink-0"
                   onClick={() => { setLogModal(v); setLogNote(v.log_notes); }}
                 >
                   {v.log_notes ? "✏️" : "📝"}
@@ -441,23 +441,23 @@ export default function DoorKnocking() {
             </div>
           )}
           {aiLoading ? (
-            <div className="flex items-center justify-center py-12 gap-3">
+            <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">Analyzing voters and optimizing route…</span>
+              <p className="text-sm text-muted-foreground">AI is analyzing your walk list...</p>
             </div>
-          ) : (
+          ) : aiSuggestion ? (
             <>
-              <div className="prose prose-sm prose-invert max-w-none">
-                <ReactMarkdown>{aiSuggestion || ""}</ReactMarkdown>
+              <div className="prose prose-invert prose-sm max-w-none text-foreground">
+                <ReactMarkdown>{aiSuggestion}</ReactMarkdown>
               </div>
               {aiOrderedIndices && (
-                <Button variant="gold" onClick={downloadOptimizedPDF} className="w-full mt-2">
+                <Button variant="gold" className="mt-4" onClick={downloadOptimizedPDF}>
                   <Download className="mr-2 h-4 w-4" />
-                  Download Optimized PDF
+                  Download Optimized Walk List PDF
                 </Button>
               )}
             </>
-          )}
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>

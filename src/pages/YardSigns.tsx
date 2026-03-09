@@ -116,32 +116,32 @@ export default function YardSigns() {
   const pendingCount = totalCount - deliveredCount;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Yard Sign List</h1>
+          <h1 className="text-xl md:text-2xl font-bold">Yard Sign List</h1>
           <p className="text-sm text-muted-foreground">Track who needs a yard sign and mark them delivered</p>
         </div>
-        <Button variant="gold" onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4" />
+        <Button variant="gold" onClick={() => setShowForm(true)} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" />
           Add Request
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <p className="text-2xl font-bold">{totalCount}</p>
-          <p className="text-xs text-muted-foreground mt-1">Total Requests</p>
+      <div className="grid grid-cols-3 gap-2 md:gap-4">
+        <div className="rounded-xl border border-border bg-card p-3 md:p-4 text-center">
+          <p className="text-xl md:text-2xl font-bold">{totalCount}</p>
+          <p className="text-[10px] md:text-xs text-muted-foreground mt-1">Total</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <p className="text-2xl font-bold text-gold">{pendingCount}</p>
-          <p className="text-xs text-muted-foreground mt-1">Pending</p>
+        <div className="rounded-xl border border-border bg-card p-3 md:p-4 text-center">
+          <p className="text-xl md:text-2xl font-bold text-gold">{pendingCount}</p>
+          <p className="text-[10px] md:text-xs text-muted-foreground mt-1">Pending</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <p className="text-2xl font-bold text-primary">{deliveredCount}</p>
-          <p className="text-xs text-muted-foreground mt-1">Delivered</p>
+        <div className="rounded-xl border border-border bg-card p-3 md:p-4 text-center">
+          <p className="text-xl md:text-2xl font-bold text-primary">{deliveredCount}</p>
+          <p className="text-[10px] md:text-xs text-muted-foreground mt-1">Delivered</p>
         </div>
       </div>
 
@@ -163,7 +163,7 @@ export default function YardSigns() {
               variant={filter === f ? "default" : "outline"}
               size="sm"
               onClick={() => setFilter(f)}
-              className="capitalize"
+              className="capitalize flex-1 sm:flex-none"
             >
               {f}
             </Button>
@@ -188,7 +188,7 @@ export default function YardSigns() {
           {filtered.map((req) => (
             <div
               key={req.id}
-              className={`flex items-start gap-4 rounded-xl border p-4 transition-all ${
+              className={`flex items-start gap-3 md:gap-4 rounded-xl border p-3 md:p-4 transition-all ${
                 req.delivered ? "border-border bg-muted/30 opacity-70" : "border-border bg-card"
               }`}
             >
@@ -199,37 +199,37 @@ export default function YardSigns() {
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className={`font-semibold ${req.delivered ? "line-through text-muted-foreground" : ""}`}>
+                  <p className={`font-semibold text-sm md:text-base ${req.delivered ? "line-through text-muted-foreground" : ""}`}>
                     {req.name}
                   </p>
-                  <Badge variant={req.delivered ? "secondary" : "outline"} className={req.delivered ? "" : "border-amber-500 text-amber-500"}>
+                  <Badge variant={req.delivered ? "secondary" : "outline"} className={`text-[10px] md:text-xs ${req.delivered ? "" : "border-amber-500 text-amber-500"}`}>
                     {req.delivered ? "Delivered" : "Pending"}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground mt-1">
+                  <MapPin className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
                   <span className="truncate">{req.street_address}, {req.city}</span>
                 </div>
-                <div className="flex flex-wrap gap-3 mt-1">
+                <div className="flex flex-wrap gap-2 md:gap-3 mt-1">
                   {req.phone && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <a href={`tel:${req.phone}`} className="flex items-center gap-1 text-[10px] md:text-xs text-muted-foreground hover:text-foreground">
                       <Phone className="h-3 w-3" /> {req.phone}
-                    </span>
+                    </a>
                   )}
                   {req.email && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Mail className="h-3 w-3" /> {req.email}
-                    </span>
+                    <a href={`mailto:${req.email}`} className="flex items-center gap-1 text-[10px] md:text-xs text-muted-foreground hover:text-foreground">
+                      <Mail className="h-3 w-3" /> <span className="truncate max-w-[120px] md:max-w-none">{req.email}</span>
+                    </a>
                   )}
                 </div>
                 {req.notes && (
-                  <p className="text-xs text-muted-foreground mt-1 italic">{req.notes}</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-1 italic">{req.notes}</p>
                 )}
               </div>
               <Button
                 variant="ghost"
                 size="icon"
-                className="shrink-0 text-muted-foreground hover:text-destructive"
+                className="shrink-0 text-muted-foreground hover:text-destructive h-8 w-8"
                 onClick={() => handleDelete(req.id)}
               >
                 <Trash2 className="h-4 w-4" />
@@ -250,7 +250,7 @@ export default function YardSigns() {
               <Label>Name <span className="text-destructive">*</span></Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Jane Smith" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Phone</Label>
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="555-000-1234" />
