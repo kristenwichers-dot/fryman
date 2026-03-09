@@ -13,6 +13,7 @@ import DoorKnocking from "./pages/DoorKnocking";
 import EventsScheduler from "./pages/EventsScheduler";
 import PressRelease from "./pages/PressRelease";
 import DebatePrep from "./pages/DebatePrep";
+import YardSigns from "./pages/YardSigns";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
           <Route path="/events" element={<AuthGuard><EventsScheduler /></AuthGuard>} />
           <Route path="/press-release" element={<AuthGuard><PressRelease /></AuthGuard>} />
           <Route path="/debate-prep" element={<AuthGuard><DebatePrep /></AuthGuard>} />
+          <Route path="/yard-signs" element={<AuthGuard><YardSigns /></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
@@ -64,3 +66,4 @@ const App = () => (
 );
 
 export default App;
+
