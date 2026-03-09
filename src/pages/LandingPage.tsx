@@ -23,18 +23,6 @@ const sections = [
     desc: "Plan optimized canvassing routes with an interactive map and status tracking.",
   },
   {
-    to: "/phone-banking",
-    icon: Phone,
-    title: "Phone Banking",
-    desc: "Call voters with customizable scripts and track call outcomes.",
-  },
-  {
-    to: "/volunteers",
-    icon: UserCheck,
-    title: "Volunteer Management",
-    desc: "Track volunteers, assign tasks, and log their hours.",
-  },
-  {
     to: "/yard-signs",
     icon: SignpostBig,
     title: "Yard Sign List",
@@ -57,6 +45,18 @@ const sections = [
     icon: MessageSquare,
     title: "Debate Prep Bot",
     desc: "Practice debates against a configurable AI opponent to sharpen your arguments.",
+  },
+  {
+    to: "/phone-banking",
+    icon: Phone,
+    title: "Phone Banking",
+    desc: "Call voters with customizable scripts and track call outcomes.",
+  },
+  {
+    to: "/volunteers",
+    icon: UserCheck,
+    title: "Volunteer Management",
+    desc: "Track volunteers, assign tasks, and log their hours.",
   },
 ];
 
