@@ -133,18 +133,59 @@ export default function DoorKnocking() {
 
   const downloadWalkList = () => {
     const list = selectedCity ? cityVoters : voters;
-    const header = "Stop,Last Name,First Name,Street Address,City,Party,Status,Notes\n";
-    const rows = list.map((v, i) =>
-      [i + 1, v.last_name, v.first_name, `"${v.street_address}"`, v.city, v.party, v.status.replace("_", " "), `"${v.log_notes}"`].join(",")
-    ).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `walk-list-${selectedCity || "all"}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Walk list downloaded");
+    const cityLabel = selectedCity || "All Cities";
+
+    // Group voters by street address, sorted by address
+    const grouped = new Map<string, VoterPin[]>();
+    const sorted = [...list].sort((a, b) => a.street_address.localeCompare(b.street_address));
+    sorted.forEach((v) => {
+      const key = v.street_address.trim().toUpperCase();
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(v);
+    });
+
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
+
+    // Header
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Walk List — ${cityLabel}`, 14, 16);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`Generated ${new Date().toLocaleDateString()}`, 14, 22);
+    doc.setTextColor(0);
+
+    const tableRows: string[][] = [];
+    grouped.forEach((voterGroup, address) => {
+      const voterNames = voterGroup
+        .map((v) => {
+          const party = v.party ? ` (${v.party.charAt(0).toUpperCase()})` : "";
+          return `${v.first_name} ${v.last_name}${party}`;
+        })
+        .join("\n");
+      // Use the status/notes from first voter in group (or blank if mixed)
+      tableRows.push([address, voterNames, "", ""]);
+    });
+
+    autoTable(doc, {
+      startY: 27,
+      head: [["Address", "Voters", "Status", "Notes"]],
+      body: tableRows,
+      styles: { fontSize: 8, cellPadding: 3, valign: "top" },
+      headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: "bold", lineWidth: 0.3, lineColor: 180 },
+      columnStyles: {
+        0: { cellWidth: 52 },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 45 },
+      },
+      theme: "grid",
+      alternateRowStyles: { fillColor: [255, 255, 255] },
+    });
+
+    doc.save(`walk-list-${cityLabel.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success("Walk list downloaded as PDF");
   };
 
   const optimizeWalkList = async () => {
