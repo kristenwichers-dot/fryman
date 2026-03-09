@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Send, Settings } from "lucide-react";
+import { Send, Settings, Trash2, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 interface Message {
@@ -35,6 +35,8 @@ export default function DebatePrep() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [persona, setPersona] = useState<PersonaSettings>(defaultPersona);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +55,42 @@ export default function DebatePrep() {
 
   useEffect(() => { fetchHistory(); }, []);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  const handleClear = async () => {
+    setClearing(true);
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error("Not logged in");
+      const { error } = await supabase.from("chat_history").delete().eq("user_id", user.id);
+      if (error) throw error;
+      setMessages([]);
+      setShowClearConfirm(false);
+      toast.success("Debate session cleared — ready for a new one!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to clear session");
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (messages.length === 0) {
+      toast.error("No messages to save.");
+      return;
+    }
+    const lines = messages.map((m) =>
+      `[${m.role === "user" ? "You" : persona.opponentName}]\n${m.content}`
+    );
+    const text = `Debate Prep Session\nOpponent: ${persona.opponentName} (${persona.politicalLeaning})\n\n${lines.join("\n\n---\n\n")}`;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `debate-session-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Session saved as text file!");
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -95,9 +133,17 @@ export default function DebatePrep() {
           <h1 className="text-lg font-bold">Debate Prep Bot</h1>
           <p className="text-xs text-muted-foreground">Opponent: {persona.opponentName}</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}>
-          <Settings className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={handleSave} title="Save session">
+            <Download className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setShowClearConfirm(true)} title="New debate" className="text-destructive hover:text-destructive">
+            <Trash2 className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} title="Settings">
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -180,6 +226,22 @@ export default function DebatePrep() {
             </div>
             <div><Label>Key Policy Positions</Label><Textarea value={persona.policyPositions} onChange={(e) => setPersona({ ...persona, policyPositions: e.target.value })} rows={3} placeholder="Healthcare, immigration, economy..." /></div>
             <Button variant="gold" className="w-full" onClick={() => setShowSettings(false)}>Save Settings</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear Confirm */}
+      <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Start a New Debate?</DialogTitle>
+            <DialogDescription>This will permanently delete the current conversation. Save it first using the download button if you want to keep it.</DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowClearConfirm(false)}>Cancel</Button>
+            <Button variant="destructive" className="flex-1" onClick={handleClear} disabled={clearing}>
+              {clearing ? "Clearing..." : "Clear & Start New"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
