@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +23,12 @@ interface VoterPin {
   log_notes: string;
 }
 
+interface CitySummary {
+  city: string;
+  voter_count: number;
+  contacted_count: number;
+}
+
 const STATUS_OPTIONS = [
   { value: "not_visited", label: "Not Visited" },
   { value: "contacted", label: "Contacted" },
@@ -38,8 +44,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function DoorKnocking() {
-  const [voters, setVoters] = useState<VoterPin[]>([]);
+  const [citiesSummary, setCitiesSummary] = useState<CitySummary[]>([]);
+  const [cityVoters, setCityVoters] = useState<VoterPin[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cityLoading, setCityLoading] = useState(false);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [logModal, setLogModal] = useState<VoterPin | null>(null);
   const [logNote, setLogNote] = useState("");
@@ -48,11 +56,23 @@ export default function DoorKnocking() {
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [aiOrderedIndices, setAiOrderedIndices] = useState<number[] | null>(null);
 
-  const fetchVoters = async () => {
+  // Fetch only city summaries on mount (single fast query)
+  const fetchCities = useCallback(async () => {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
+    const { data, error } = await supabase.rpc("get_door_knocking_cities", { p_user_id: user.id });
+    if (!error && data) {
+      setCitiesSummary(data as CitySummary[]);
+    }
+    setLoading(false);
+  }, []);
 
-    // Paginate to fetch all voters beyond the 1000-row default limit
+  // Fetch voters only for the selected city
+  const fetchCityVoters = useCallback(async (city: string) => {
+    setCityLoading(true);
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) { setCityLoading(false); return; }
+
     const allVoters: any[] = [];
     const batchSize = 1000;
     let from = 0;
@@ -61,7 +81,7 @@ export default function DoorKnocking() {
         .from("voters")
         .select("*")
         .eq("user_id", user.id)
-        .order("city")
+        .eq("city", city)
         .order("street_address")
         .range(from, from + batchSize - 1);
       if (!batch || batch.length === 0) break;
@@ -69,42 +89,54 @@ export default function DoorKnocking() {
       if (batch.length < batchSize) break;
       from += batchSize;
     }
-    const voterData = allVoters;
 
-    const { data: logs } = await supabase
-      .from("door_knocking_logs")
-      .select("*")
-      .eq("user_id", user.id);
+    const voterIds = allVoters.map((v) => v.id);
+    // Fetch logs for these voters only
+    let allLogs: any[] = [];
+    for (let i = 0; i < voterIds.length; i += 1000) {
+      const chunk = voterIds.slice(i, i + 1000);
+      const { data: logs } = await supabase
+        .from("door_knocking_logs")
+        .select("*")
+        .eq("user_id", user.id)
+        .in("voter_id", chunk);
+      if (logs) allLogs.push(...logs);
+    }
 
     const logMap = new Map<string, any>();
-    (logs || []).forEach((l: any) => { if (l.voter_id) logMap.set(l.voter_id, l); });
+    allLogs.forEach((l) => { if (l.voter_id) logMap.set(l.voter_id, l); });
 
-    if (voterData) {
-      setVoters(
-        voterData.map((v: any) => {
-          const log = logMap.get(v.id);
-          return {
-            id: v.id,
-            last_name: v.last_name || "",
-            first_name: v.first_name || "",
-            street_address: v.street_address || "",
-            city: v.city || "",
-            party: v.party || "",
-            notes: v.notes || "",
-            log_id: log?.id || null,
-            status: log?.status || "not_visited",
-            log_notes: log?.notes || "",
-          };
-        })
-      );
+    setCityVoters(
+      allVoters.map((v: any) => {
+        const log = logMap.get(v.id);
+        return {
+          id: v.id,
+          last_name: v.last_name || "",
+          first_name: v.first_name || "",
+          street_address: v.street_address || "",
+          city: v.city || "",
+          party: v.party || "",
+          notes: v.notes || "",
+          log_id: log?.id || null,
+          status: log?.status || "not_visited",
+          log_notes: log?.notes || "",
+        };
+      })
+    );
+    setCityLoading(false);
+  }, []);
+
+  useEffect(() => { fetchCities(); }, [fetchCities]);
+
+  useEffect(() => {
+    if (selectedCity) {
+      fetchCityVoters(selectedCity);
+    } else {
+      setCityVoters([]);
     }
-    setLoading(false);
-  };
+  }, [selectedCity, fetchCityVoters]);
 
-  useEffect(() => { fetchVoters(); }, []);
-
-  const cities = Array.from(new Set(voters.map((v) => v.city).filter(Boolean))).sort();
-  const cityVoters = selectedCity ? voters.filter((v) => v.city === selectedCity) : [];
+  const totalVoters = citiesSummary.reduce((s, c) => s + c.voter_count, 0);
 
   const updateStatus = async (voter: VoterPin, newStatus: string) => {
     const user = (await supabase.auth.getUser()).data.user;
@@ -114,7 +146,7 @@ export default function DoorKnocking() {
     } else {
       await supabase.from("door_knocking_logs").insert({ user_id: user.id, voter_id: voter.id, status: newStatus });
     }
-    fetchVoters();
+    if (selectedCity) fetchCityVoters(selectedCity);
   };
 
   const saveLog = async () => {
@@ -129,14 +161,13 @@ export default function DoorKnocking() {
     toast.success("Note saved");
     setLogModal(null);
     setLogNote("");
-    fetchVoters();
+    if (selectedCity) fetchCityVoters(selectedCity);
   };
 
   const downloadWalkList = () => {
-    const list = selectedCity ? cityVoters : voters;
+    const list = cityVoters;
     const cityLabel = selectedCity || "All Cities";
 
-    // Group voters by street address, sorted by address
     const grouped = new Map<string, VoterPin[]>();
     const sorted = [...list].sort((a, b) => a.street_address.localeCompare(b.street_address));
     sorted.forEach((v) => {
@@ -146,8 +177,6 @@ export default function DoorKnocking() {
     });
 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
-
-    // Header
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text(`Walk List — ${cityLabel}`, 14, 16);
@@ -165,7 +194,6 @@ export default function DoorKnocking() {
           return `${v.first_name} ${v.last_name}${party}`;
         })
         .join("\n");
-      // Use the status/notes from first voter in group (or blank if mixed)
       tableRows.push([address, voterNames, "", ""]);
     });
 
@@ -268,47 +296,40 @@ export default function DoorKnocking() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">Door Knocking</h1>
-            <p className="text-sm text-muted-foreground">{voters.length} voters across {cities.length} cities</p>
+            <p className="text-sm text-muted-foreground">{totalVoters} voters across {citiesSummary.length} cities</p>
           </div>
-          <Button size="sm" variant="outline" onClick={downloadWalkList} disabled={voters.length === 0}>
-            <Download className="mr-2 h-4 w-4" />Download All
-          </Button>
         </div>
 
-        {cities.length === 0 ? (
+        {citiesSummary.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3">
             <MapPin className="h-12 w-12 text-muted-foreground" />
             <p className="text-muted-foreground">Add voters to your database first</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {cities.map((city) => {
-              const count = voters.filter((v) => v.city === city).length;
-              const contacted = voters.filter((v) => v.city === city && v.status !== "not_visited").length;
-              return (
-                <button
-                  key={city}
-                  onClick={() => setSelectedCity(city)}
-                  className="flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-5 text-left hover:border-primary/60 hover:bg-primary/5 transition-all duration-200 group"
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <MapPin className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-semibold text-sm truncate">{city}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">{count} voters</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                    <div
-                      className="bg-primary h-1.5 rounded-full transition-all"
-                      style={{ width: count > 0 ? `${(contacted / count) * 100}%` : "0%" }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">{contacted}/{count} visited</p>
-                </button>
-              );
-            })}
+            {citiesSummary.map((cs) => (
+              <button
+                key={cs.city}
+                onClick={() => setSelectedCity(cs.city)}
+                className="flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-5 text-left hover:border-primary/60 hover:bg-primary/5 transition-all duration-200 group"
+              >
+                <div className="flex items-center gap-2 w-full">
+                  <MapPin className="h-4 w-4 text-primary shrink-0" />
+                  <span className="font-semibold text-sm truncate">{cs.city}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">{cs.voter_count} voters</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                  <div
+                    className="bg-primary h-1.5 rounded-full transition-all"
+                    style={{ width: cs.voter_count > 0 ? `${(cs.contacted_count / cs.voter_count) * 100}%` : "0%" }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">{cs.contacted_count}/{cs.voter_count} visited</p>
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -321,20 +342,20 @@ export default function DoorKnocking() {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setSelectedCity(null)}>
+          <Button variant="ghost" size="icon" onClick={() => { setSelectedCity(null); fetchCities(); }}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-lg font-bold">{selectedCity}</h1>
-            <p className="text-xs text-muted-foreground">{cityVoters.length} voters</p>
+            <p className="text-xs text-muted-foreground">{cityLoading ? "Loading…" : `${cityVoters.length} voters`}</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" onClick={optimizeWalkList} disabled={aiLoading}>
+          <Button size="sm" onClick={optimizeWalkList} disabled={aiLoading || cityLoading}>
             <Sparkles className="mr-2 h-4 w-4" />
             {aiLoading ? "Optimizing..." : "AI Optimize"}
           </Button>
-          <Button size="sm" variant="outline" onClick={downloadWalkList}>
+          <Button size="sm" variant="outline" onClick={downloadWalkList} disabled={cityLoading}>
             <Download className="mr-2 h-4 w-4" />Walk List
           </Button>
         </div>
@@ -342,7 +363,11 @@ export default function DoorKnocking() {
 
       {/* Voter list */}
       <div className="flex-1 overflow-auto p-4 space-y-2">
-        {cityVoters.length === 0 ? (
+        {cityLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : cityVoters.length === 0 ? (
           <p className="text-muted-foreground text-center py-12">No voters in this city</p>
         ) : (
           cityVoters.map((v) => (
