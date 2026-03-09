@@ -35,6 +35,8 @@ export default function DebatePrep() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [persona, setPersona] = useState<PersonaSettings>(defaultPersona);
   const bottomRef = useRef<HTMLDivElement>(null);
 
