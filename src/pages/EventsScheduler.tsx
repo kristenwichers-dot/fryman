@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { Plus, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Sparkles, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 
 interface CampaignEvent {
@@ -28,6 +29,7 @@ export default function EventsScheduler() {
   const [optimizing, setOptimizing] = useState(false);
   const [optimizationResult, setOptimizationResult] = useState("");
   const [showOptModal, setShowOptModal] = useState(false);
+  const [showSidePanel, setShowSidePanel] = useState(false);
 
   const fetchEvents = async () => {
     const { data } = await supabase.from("events").select("*").order("date");
@@ -75,15 +77,50 @@ export default function EventsScheduler() {
 
   const dayEvents = (day: Date) => events.filter((e) => isSameDay(new Date(e.date), day));
 
+  const handleDayClick = (day: Date) => {
+    setSelectedDate(day);
+    // On mobile, open the side panel as a sheet
+    if (window.innerWidth < 768) {
+      setShowSidePanel(true);
+    }
+  };
+
+  const SidePanelContent = () => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">
+          {selectedDate ? format(selectedDate, "MMM d, yyyy") : "Select a day"}
+        </h3>
+        <Button size="sm" variant="gold" onClick={() => {
+          setEventForm({ title: "", date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "", time: "", location: "", description: "" });
+          setEditingId(null);
+          setShowForm(true);
+        }}>
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+      {selectedDate && dayEvents(selectedDate).length === 0 && (
+        <p className="text-sm text-muted-foreground">No events scheduled</p>
+      )}
+      {selectedDate && dayEvents(selectedDate).map((ev) => (
+        <div key={ev.id} className="rounded-lg border border-border p-3 space-y-1 cursor-pointer hover:bg-secondary/50"
+          onClick={() => { setEventForm({ title: ev.title, date: ev.date, time: ev.time, location: ev.location, description: ev.description }); setEditingId(ev.id); setShowForm(true); }}>
+          <p className="font-medium text-sm">{ev.title}</p>
+          <p className="text-xs text-muted-foreground">{ev.time} — {ev.location}</p>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
-    <div className="flex h-[calc(100vh-0px)]">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-56px)] md:h-screen">
       {/* Calendar */}
-      <div className="flex-1 p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Events & AI Scheduler</h1>
-          <Button variant="gold" onClick={handleOptimize} disabled={optimizing}>
+      <div className="flex-1 p-4 md:p-6 space-y-4 overflow-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h1 className="text-xl md:text-2xl font-bold">Events & AI Scheduler</h1>
+          <Button variant="gold" size="sm" onClick={handleOptimize} disabled={optimizing}>
             <Sparkles className="mr-2 h-4 w-4" />
-            {optimizing ? "Optimizing..." : "Optimize Schedule"}
+            {optimizing ? "Optimizing..." : "Optimize"}
           </Button>
         </div>
 
@@ -100,11 +137,11 @@ export default function EventsScheduler() {
 
         {/* Grid */}
         <div className="grid grid-cols-7 gap-px rounded-xl border border-border overflow-hidden bg-border">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-            <div key={d} className="bg-secondary p-2 text-center text-xs font-medium text-muted-foreground">{d}</div>
+          {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+            <div key={i} className="bg-secondary p-1 md:p-2 text-center text-xs font-medium text-muted-foreground">{d}</div>
           ))}
           {Array.from({ length: startDow }).map((_, i) => (
-            <div key={`empty-${i}`} className="bg-card p-2 min-h-[80px]" />
+            <div key={`empty-${i}`} className="bg-card p-1 md:p-2 min-h-[50px] md:min-h-[80px]" />
           ))}
           {days.map((day) => {
             const de = dayEvents(day);
@@ -112,47 +149,53 @@ export default function EventsScheduler() {
             return (
               <div
                 key={day.toISOString()}
-                onClick={() => setSelectedDate(day)}
-                className={`bg-card p-2 min-h-[80px] cursor-pointer transition-colors hover:bg-secondary/50 ${
+                onClick={() => handleDayClick(day)}
+                className={`bg-card p-1 md:p-2 min-h-[50px] md:min-h-[80px] cursor-pointer transition-colors hover:bg-secondary/50 ${
                   isSelected ? "ring-2 ring-primary ring-inset" : ""
                 } ${!isSameMonth(day, currentMonth) ? "opacity-40" : ""}`}
               >
                 <p className="text-xs font-medium">{format(day, "d")}</p>
-                {de.slice(0, 2).map((ev) => (
-                  <div key={ev.id} className="mt-1 truncate rounded bg-primary/20 px-1 py-0.5 text-[10px] text-primary cursor-pointer"
-                    onClick={(e) => { e.stopPropagation(); setEventForm({ title: ev.title, date: ev.date, time: ev.time, location: ev.location, description: ev.description }); setEditingId(ev.id); setShowForm(true); }}>
-                    {ev.title}
+                {/* Desktop: show event titles */}
+                <div className="hidden md:block">
+                  {de.slice(0, 2).map((ev) => (
+                    <div key={ev.id} className="mt-1 truncate rounded bg-primary/20 px-1 py-0.5 text-[10px] text-primary cursor-pointer"
+                      onClick={(e) => { e.stopPropagation(); setEventForm({ title: ev.title, date: ev.date, time: ev.time, location: ev.location, description: ev.description }); setEditingId(ev.id); setShowForm(true); }}>
+                      {ev.title}
+                    </div>
+                  ))}
+                  {de.length > 2 && <p className="text-[10px] text-muted-foreground">+{de.length - 2} more</p>}
+                </div>
+                {/* Mobile: show dot indicator */}
+                {de.length > 0 && (
+                  <div className="md:hidden flex justify-center mt-1">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                   </div>
-                ))}
-                {de.length > 2 && <p className="text-[10px] text-muted-foreground">+{de.length - 2} more</p>}
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Side panel */}
-      <div className="w-80 border-l border-border bg-card p-6 space-y-4 overflow-auto">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">
-            {selectedDate ? format(selectedDate, "MMM d, yyyy") : "Select a day"}
-          </h3>
-          <Button size="sm" variant="gold" onClick={() => {
-            setEventForm({ title: "", date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "", time: "", location: "", description: "" });
-            setEditingId(null);
-            setShowForm(true);
-          }}>
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-        {selectedDate && dayEvents(selectedDate).map((ev) => (
-          <div key={ev.id} className="rounded-lg border border-border p-3 space-y-1 cursor-pointer hover:bg-secondary/50"
-            onClick={() => { setEventForm({ title: ev.title, date: ev.date, time: ev.time, location: ev.location, description: ev.description }); setEditingId(ev.id); setShowForm(true); }}>
-            <p className="font-medium text-sm">{ev.title}</p>
-            <p className="text-xs text-muted-foreground">{ev.time} — {ev.location}</p>
-          </div>
-        ))}
+      {/* Desktop Side panel */}
+      <div className="hidden md:block w-80 border-l border-border bg-card p-6 overflow-auto">
+        <SidePanelContent />
       </div>
+
+      {/* Mobile Side panel (Sheet) */}
+      <Sheet open={showSidePanel} onOpenChange={setShowSidePanel}>
+        <SheetContent side="bottom" className="h-[60vh] rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Events"}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <SidePanelContent />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Event form */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

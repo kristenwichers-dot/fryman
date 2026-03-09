@@ -103,7 +103,6 @@ export default function DebatePrep() {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) throw new Error("Not logged in");
 
-      // Save user message
       await supabase.from("chat_history").insert({ user_id: user.id, role: "user", content: input });
 
       const allMsgs = [...messages, userMsg].map((m) => ({ role: m.role, content: m.content }));
@@ -116,7 +115,6 @@ export default function DebatePrep() {
       const assistantMsg: Message = { role: "assistant", content: data?.content || "No response" };
       setMessages((prev) => [...prev, assistantMsg]);
 
-      // Save assistant message
       await supabase.from("chat_history").insert({ user_id: user.id, role: "assistant", content: assistantMsg.content });
     } catch (err: any) {
       toast.error(err.message || "Failed to get response");
@@ -126,37 +124,37 @@ export default function DebatePrep() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-0px)]">
+    <div className="flex flex-col h-[calc(100vh-56px)] md:h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border p-4">
-        <div>
-          <h1 className="text-lg font-bold">Debate Prep Bot</h1>
-          <p className="text-xs text-muted-foreground">Opponent: {persona.opponentName}</p>
+      <div className="flex items-center justify-between border-b border-border p-3 md:p-4">
+        <div className="min-w-0">
+          <h1 className="text-base md:text-lg font-bold truncate">Debate Prep Bot</h1>
+          <p className="text-[10px] md:text-xs text-muted-foreground truncate">Opponent: {persona.opponentName}</p>
         </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={handleSave} title="Save session">
-            <Download className="h-5 w-5" />
+        <div className="flex items-center gap-1 shrink-0">
+          <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9" onClick={handleSave} title="Save session">
+            <Download className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setShowClearConfirm(true)} title="New debate" className="text-destructive hover:text-destructive">
-            <Trash2 className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9 text-destructive hover:text-destructive" onClick={() => setShowClearConfirm(true)} title="New debate">
+            <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} title="Settings">
-            <Settings className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9" onClick={() => setShowSettings(true)} title="Settings">
+            <Settings className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="flex-1 overflow-auto p-3 md:p-4 space-y-3 md:space-y-4">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground text-sm">Start a debate practice session. Configure your opponent in settings.</p>
+            <p className="text-muted-foreground text-sm text-center px-4">Start a debate practice session. Configure your opponent in settings.</p>
           </div>
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm ${
+              className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-3 md:px-4 py-2 md:py-3 text-sm ${
                 msg.role === "user"
                   ? "bg-primary text-primary-foreground rounded-br-md"
                   : "bg-secondary text-secondary-foreground rounded-bl-md"
@@ -181,14 +179,15 @@ export default function DebatePrep() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-border p-4">
+      <div className="border-t border-border p-3 md:p-4">
         <div className="flex gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your argument or question..."
+            placeholder="Type your argument..."
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
             disabled={sending}
+            className="text-base"
           />
           <Button variant="gold" size="icon" onClick={handleSend} disabled={sending || !input.trim()}>
             <Send className="h-4 w-4" />

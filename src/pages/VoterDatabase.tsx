@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Plus, Search, Trash2, Pencil, ChevronDown } from "lucide-react";
+import { Plus, Search, Trash2, Pencil, ChevronDown, MapPin } from "lucide-react";
 import CsvImport from "@/components/CsvImport";
 
 interface Voter {
@@ -134,9 +134,10 @@ export default function VoterDatabase() {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Voter Database</h1>
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h1 className="text-xl md:text-2xl font-bold">Voter Database</h1>
         <div className="flex gap-2">
           <CsvImport onComplete={fetchVoters} />
           <DropdownMenu>
@@ -172,12 +173,12 @@ export default function VoterDatabase() {
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyVoter); setEditingId(null); } }}>
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>{editingId ? "Edit Voter" : "Add Voter"}</DialogTitle></DialogHeader>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1"><Label>Last Name</Label><Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} /></div>
                 <div className="space-y-1"><Label>First Name</Label><Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} /></div>
                 <div className="space-y-1"><Label>Street Address</Label><Input value={form.street_address} onChange={(e) => setForm({ ...form, street_address: e.target.value })} /></div>
                 <div className="space-y-1"><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-                <div className="col-span-2 space-y-1"><Label>Party Affiliation</Label>
+                <div className="sm:col-span-2 space-y-1"><Label>Party Affiliation</Label>
                   <Select value={form.party} onValueChange={(v) => setForm({ ...form, party: v })}>
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>
@@ -188,7 +189,7 @@ export default function VoterDatabase() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-2 space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} placeholder="Add notes about this voter..." /></div>
+                <div className="sm:col-span-2 space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} placeholder="Add notes about this voter..." /></div>
               </div>
               <Button variant="gold" className="mt-4 w-full" onClick={handleSave}>Save</Button>
             </DialogContent>
@@ -197,13 +198,13 @@ export default function VoterDatabase() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 items-center">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Search voters..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select value={filterParty} onValueChange={setFilterParty}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Parties</SelectItem>
             <SelectItem value="Democrat">Democrat</SelectItem>
@@ -214,8 +215,8 @@ export default function VoterDatabase() {
         {selectedIds.size > 0 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="mr-2 h-4 w-4" />Delete Selected ({selectedIds.size})
+              <Button variant="destructive" size="sm" className="w-full sm:w-auto">
+                <Trash2 className="mr-2 h-4 w-4" />Delete ({selectedIds.size})
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -232,8 +233,8 @@ export default function VoterDatabase() {
         )}
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-border overflow-hidden">
+      {/* Desktop Table */}
+      <div className="hidden md:block rounded-xl border border-border overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-secondary">
             <tr>
@@ -270,6 +271,46 @@ export default function VoterDatabase() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">No voters found</div>
+        ) : (
+          filtered.map((v) => (
+            <div key={v.id} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={selectedIds.has(v.id)}
+                  onCheckedChange={() => toggleSelect(v.id)}
+                  className="mt-1"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold">{v.last_name}, {v.first_name}</p>
+                  <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{v.street_address}, {v.city}</span>
+                  </div>
+                  {v.party && (
+                    <p className="text-xs text-muted-foreground mt-1">Party: {v.party}</p>
+                  )}
+                  {v.notes && (
+                    <p className="text-xs text-muted-foreground mt-1 italic truncate">{v.notes}</p>
+                  )}
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(v)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(v.id)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
