@@ -136,11 +136,11 @@ export default function YardSigns() {
           <p className="text-xs text-muted-foreground mt-1">Total Requests</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <p className="text-2xl font-bold text-amber-500">{pendingCount}</p>
+          <p className="text-2xl font-bold text-gold">{pendingCount}</p>
           <p className="text-xs text-muted-foreground mt-1">Pending</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <p className="text-2xl font-bold text-green-500">{deliveredCount}</p>
+          <p className="text-2xl font-bold text-primary">{deliveredCount}</p>
           <p className="text-xs text-muted-foreground mt-1">Delivered</p>
         </div>
       </div>
