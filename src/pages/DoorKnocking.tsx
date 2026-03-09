@@ -321,6 +321,13 @@ export default function DoorKnocking() {
               Walk List Optimization — {selectedCity}
             </DialogTitle>
           </DialogHeader>
+          {!aiLoading && (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground space-y-0.5">
+              <p><span className="font-semibold text-foreground">#1, #2–3…</span> = suggested walking stop order</p>
+              <p><span className="font-semibold text-foreground">(1382), (463)…</span> = house number from the street address</p>
+              <p><span className="font-semibold text-foreground">Clusters</span> = roads grouped together to minimize backtracking</p>
+            </div>
+          )}
           {aiLoading ? (
             <div className="flex items-center justify-center py-12 gap-3">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
