@@ -211,6 +211,48 @@ export type Database = {
         }
         Relationships: []
       }
+      yard_sign_requests: {
+        Row: {
+          city: string
+          created_at: string
+          delivered: boolean
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          street_address: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string
+          created_at?: string
+          delivered?: boolean
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          street_address?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          delivered?: boolean
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          street_address?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
