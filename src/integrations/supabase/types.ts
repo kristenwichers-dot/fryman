@@ -216,7 +216,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_door_knocking_cities: {
+        Args: { p_user_id: string }
+        Returns: {
+          city: string
+          contacted_count: number
+          voter_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
