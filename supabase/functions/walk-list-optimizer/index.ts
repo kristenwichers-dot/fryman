@@ -15,7 +15,7 @@ serve(async (req) => {
 
     const voterList = voters
       .map((v: any, i: number) =>
-        `${i + 1}. ${v.last_name}, ${v.first_name} — ${v.street_address} — Party: ${v.party || "Unknown"} — Status: ${v.status.replace(/_/g, " ")}`
+        `${i}. ${v.last_name}, ${v.first_name} — ${v.street_address} — Party: ${v.party || "Unknown"} — Status: ${v.status.replace(/_/g, " ")}`
       )
       .join("\n");
 
@@ -30,12 +30,13 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content:
-              "You are a campaign field director helping to optimize door-knocking walk lists. Given a list of voters on a street, suggest the most efficient walking order to minimize backtracking, prioritize uncontacted voters, and note any strategic recommendations. Be concise and practical.",
+            content: `You are a campaign field director optimizing door-knocking walk lists. Given a numbered list of voters (0-indexed), respond ONLY with a valid JSON object — no markdown fences, no extra text. The JSON must have exactly two fields:
+"suggestion": a concise markdown string with the optimized walk order (use stop numbers like Stop #1, Stop #2...), key clusters by street, and strategic tips. Prioritize uncontacted voters.
+"orderedIndices": a flat array of 0-based integers representing the input voter list indices in optimal walking order to minimize backtracking. Every voter index must appear exactly once.`,
           },
           {
             role: "user",
-            content: `Optimize this walk list for ${city}:\n\n${voterList || "No voters listed."}`,
+            content: `Optimize this walk list for ${city} (${voters.length} voters):\n\n${voterList || "No voters listed."}`,
           },
         ],
       }),
@@ -60,9 +61,21 @@ serve(async (req) => {
     }
 
     const aiData = await response.json();
-    const suggestion = aiData.choices?.[0]?.message?.content || "No suggestions available.";
+    const rawContent = aiData.choices?.[0]?.message?.content || "";
 
-    return new Response(JSON.stringify({ suggestion }), {
+    // Try to parse as JSON, stripping markdown code fences if present
+    let parsedData: { suggestion: string; orderedIndices: number[] } | null = null;
+    try {
+      const jsonStr = rawContent.replace(/^```(?:json)?\s*/m, "").replace(/\s*```\s*$/m, "").trim();
+      parsedData = JSON.parse(jsonStr);
+    } catch {
+      parsedData = null;
+    }
+
+    const suggestion = parsedData?.suggestion || rawContent;
+    const orderedIndices = Array.isArray(parsedData?.orderedIndices) ? parsedData.orderedIndices : null;
+
+    return new Response(JSON.stringify({ suggestion, orderedIndices }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
