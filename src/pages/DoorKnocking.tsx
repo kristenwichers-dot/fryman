@@ -23,6 +23,12 @@ interface VoterPin {
   log_notes: string;
 }
 
+interface CitySummary {
+  city: string;
+  voter_count: number;
+  contacted_count: number;
+}
+
 const STATUS_OPTIONS = [
   { value: "not_visited", label: "Not Visited" },
   { value: "contacted", label: "Contacted" },
@@ -38,8 +44,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function DoorKnocking() {
-  const [voters, setVoters] = useState<VoterPin[]>([]);
+  const [citiesSummary, setCitiesSummary] = useState<CitySummary[]>([]);
+  const [cityVoters, setCityVoters] = useState<VoterPin[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cityLoading, setCityLoading] = useState(false);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [logModal, setLogModal] = useState<VoterPin | null>(null);
   const [logNote, setLogNote] = useState("");
