@@ -32,6 +32,7 @@ export default function VoterDatabase() {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [search, setSearch] = useState("");
   const [filterParty, setFilterParty] = useState("all");
+  const [sortBy, setSortBy] = useState<"last_name" | "first_name" | "city" | "party">("last_name");
   const [form, setForm] = useState(emptyVoter);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -126,12 +127,18 @@ export default function VoterDatabase() {
     setOpen(true);
   };
 
-  const filtered = voters.filter((v) => {
-    const text = `${v.last_name} ${v.first_name} ${v.street_address} ${v.city}`.toLowerCase();
-    const matchSearch = text.includes(search.toLowerCase());
-    const matchParty = filterParty === "all" || v.party === filterParty;
-    return matchSearch && matchParty;
-  });
+  const filtered = voters
+    .filter((v) => {
+      const text = `${v.last_name} ${v.first_name} ${v.street_address} ${v.city}`.toLowerCase();
+      const matchSearch = text.includes(search.toLowerCase());
+      const matchParty = filterParty === "all" || v.party === filterParty;
+      return matchSearch && matchParty;
+    })
+    .sort((a, b) => {
+      const aVal = (a[sortBy] || "").toLowerCase();
+      const bVal = (b[sortBy] || "").toLowerCase();
+      return aVal.localeCompare(bVal);
+    });
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
@@ -210,6 +217,15 @@ export default function VoterDatabase() {
             <SelectItem value="Democrat">Democrat</SelectItem>
             <SelectItem value="Republican">Republican</SelectItem>
             <SelectItem value="Independent">Independent</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+          <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="last_name">Sort: Last Name</SelectItem>
+            <SelectItem value="first_name">Sort: First Name</SelectItem>
+            <SelectItem value="city">Sort: City</SelectItem>
+            <SelectItem value="party">Sort: Party</SelectItem>
           </SelectContent>
         </Select>
         {selectedIds.size > 0 && (
