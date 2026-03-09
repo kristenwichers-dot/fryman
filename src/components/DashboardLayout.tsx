@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Users, MapPin, Calendar, FileText, MessageSquare, LogOut, ChevronLeft, ChevronRight, LayoutDashboard, SignpostBig, Menu, X } from "lucide-react";
+import { Users, MapPin, Calendar, FileText, MessageSquare, LogOut, ChevronLeft, ChevronRight, LayoutDashboard, SignpostBig, Menu, TrendingUp, UserCheck, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -8,8 +8,11 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const navItems = [
   { to: "/", label: "Home", icon: LayoutDashboard },
+  { to: "/analytics", label: "Analytics", icon: TrendingUp },
   { to: "/voters", label: "Voter Database", icon: Users },
   { to: "/door-knocking", label: "Door Knocking", icon: MapPin },
+  { to: "/phone-banking", label: "Phone Banking", icon: Phone },
+  { to: "/volunteers", label: "Volunteers", icon: UserCheck },
   { to: "/yard-signs", label: "Yard Signs", icon: SignpostBig },
   { to: "/events", label: "Events & AI", icon: Calendar },
   { to: "/press-release", label: "Press Release", icon: FileText },
