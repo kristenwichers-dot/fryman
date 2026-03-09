@@ -11,12 +11,12 @@ const navItems = [
   { to: "/analytics", label: "Analytics", icon: TrendingUp },
   { to: "/voters", label: "Voter Database", icon: Users },
   { to: "/door-knocking", label: "Door Knocking", icon: MapPin },
-  { to: "/phone-banking", label: "Phone Banking", icon: Phone },
-  { to: "/volunteers", label: "Volunteers", icon: UserCheck },
   { to: "/yard-signs", label: "Yard Signs", icon: SignpostBig },
   { to: "/events", label: "Events & AI", icon: Calendar },
   { to: "/press-release", label: "Press Release", icon: FileText },
   { to: "/debate-prep", label: "Debate Prep", icon: MessageSquare },
+  { to: "/phone-banking", label: "Phone Banking", icon: Phone },
+  { to: "/volunteers", label: "Volunteers", icon: UserCheck },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
