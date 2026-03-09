@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      call_logs: {
+        Row: {
+          called_at: string
+          created_at: string
+          id: string
+          notes: string | null
+          outcome: string | null
+          user_id: string
+          voter_id: string | null
+        }
+        Insert: {
+          called_at?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          outcome?: string | null
+          user_id: string
+          voter_id?: string | null
+        }
+        Update: {
+          called_at?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          outcome?: string | null
+          user_id?: string
+          voter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "voters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_scripts: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          is_default: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_history: {
         Row: {
           content: string
@@ -143,6 +211,45 @@ export type Database = {
           id?: string
           tone?: string | null
           topic?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      volunteers: {
+        Row: {
+          created_at: string
+          email: string | null
+          hours_logged: number | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          tasks_completed: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          hours_logged?: number | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          tasks_completed?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          hours_logged?: number | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          tasks_completed?: number | null
           updated_at?: string
           user_id?: string
         }

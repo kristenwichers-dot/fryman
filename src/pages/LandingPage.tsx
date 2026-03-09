@@ -1,9 +1,15 @@
 import { useNavigate } from "react-router-dom";
-import { Users, MapPin, Calendar, FileText, MessageSquare, ArrowRight, SignpostBig } from "lucide-react";
+import { Users, MapPin, Calendar, FileText, MessageSquare, ArrowRight, SignpostBig, TrendingUp, UserCheck, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 const sections = [
+  {
+    to: "/analytics",
+    icon: TrendingUp,
+    title: "Analytics",
+    desc: "View campaign metrics, voter stats, and track your overall progress.",
+  },
   {
     to: "/voters",
     icon: Users,
@@ -15,6 +21,24 @@ const sections = [
     icon: MapPin,
     title: "Door Knocking",
     desc: "Plan optimized canvassing routes with an interactive map and status tracking.",
+  },
+  {
+    to: "/phone-banking",
+    icon: Phone,
+    title: "Phone Banking",
+    desc: "Call voters with customizable scripts and track call outcomes.",
+  },
+  {
+    to: "/volunteers",
+    icon: UserCheck,
+    title: "Volunteer Management",
+    desc: "Track volunteers, assign tasks, and log their hours.",
+  },
+  {
+    to: "/yard-signs",
+    icon: SignpostBig,
+    title: "Yard Sign List",
+    desc: "Track yard sign requests and mark them delivered with a simple checklist.",
   },
   {
     to: "/events",
@@ -33,12 +57,6 @@ const sections = [
     icon: MessageSquare,
     title: "Debate Prep Bot",
     desc: "Practice debates against a configurable AI opponent to sharpen your arguments.",
-  },
-  {
-    to: "/yard-signs",
-    icon: SignpostBig,
-    title: "Yard Sign List",
-    desc: "Track yard sign requests and mark them delivered with a simple checklist.",
   },
 ];
 

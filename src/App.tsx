@@ -14,6 +14,9 @@ import EventsScheduler from "./pages/EventsScheduler";
 import PressRelease from "./pages/PressRelease";
 import DebatePrep from "./pages/DebatePrep";
 import YardSigns from "./pages/YardSigns";
+import Analytics from "./pages/Analytics";
+import Volunteers from "./pages/Volunteers";
+import PhoneBanking from "./pages/PhoneBanking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,8 +55,11 @@ const App = () => (
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/" element={<AuthGuard><LandingPage /></AuthGuard>} />
+          <Route path="/analytics" element={<AuthGuard><Analytics /></AuthGuard>} />
           <Route path="/voters" element={<AuthGuard><VoterDatabase /></AuthGuard>} />
           <Route path="/door-knocking" element={<AuthGuard><DoorKnocking /></AuthGuard>} />
+          <Route path="/phone-banking" element={<AuthGuard><PhoneBanking /></AuthGuard>} />
+          <Route path="/volunteers" element={<AuthGuard><Volunteers /></AuthGuard>} />
           <Route path="/events" element={<AuthGuard><EventsScheduler /></AuthGuard>} />
           <Route path="/press-release" element={<AuthGuard><PressRelease /></AuthGuard>} />
           <Route path="/debate-prep" element={<AuthGuard><DebatePrep /></AuthGuard>} />
