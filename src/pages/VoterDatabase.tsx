@@ -219,6 +219,15 @@ export default function VoterDatabase() {
             <SelectItem value="Independent">Independent</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+          <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="last_name">Sort: Last Name</SelectItem>
+            <SelectItem value="first_name">Sort: First Name</SelectItem>
+            <SelectItem value="city">Sort: City</SelectItem>
+            <SelectItem value="party">Sort: Party</SelectItem>
+          </SelectContent>
+        </Select>
         {selectedIds.size > 0 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
