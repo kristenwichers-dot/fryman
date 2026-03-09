@@ -133,9 +133,17 @@ export default function DebatePrep() {
           <h1 className="text-lg font-bold">Debate Prep Bot</h1>
           <p className="text-xs text-muted-foreground">Opponent: {persona.opponentName}</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}>
-          <Settings className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={handleSave} title="Save session">
+            <Download className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setShowClearConfirm(true)} title="New debate" className="text-destructive hover:text-destructive">
+            <Trash2 className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} title="Settings">
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
