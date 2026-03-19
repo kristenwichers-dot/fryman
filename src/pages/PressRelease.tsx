@@ -165,15 +165,14 @@ export default function PressRelease() {
     if (csvRef.current) csvRef.current.value = "";
   };
 
-  const handleOpenInGmail = () => {
+  const handleOpenInEmail = () => {
     if (selectedContacts.length === 0) { toast.error("Select at least one contact"); return; }
     const recipients = contacts.filter(c => selectedContacts.includes(c.id));
     const emails = recipients.map(c => c.email).join(",");
     const subject = encodeURIComponent(`Press Release: ${topic || "Campaign Update"}`);
     const body = encodeURIComponent(editor?.getText() || "");
-    const url = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(emails)}&su=${subject}&body=${body}`;
-    window.open(url, "_blank");
-    toast.success("Opened in Gmail!");
+    window.location.href = `mailto:?bcc=${emails}&subject=${subject}&body=${body}`;
+    toast.success("Opening email client...");
     setShowSendDialog(false);
     setSelectedContacts([]);
   };
