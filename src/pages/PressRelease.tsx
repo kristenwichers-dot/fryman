@@ -360,9 +360,21 @@ export default function PressRelease() {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setSelectedContacts(contacts.map(c => c.id))}>Select All</Button>
-              <Button variant="gold" className="flex-1" onClick={handleSend} disabled={sending}>
-                <Send className="mr-1 h-3 w-3" />{sending ? "Sending..." : "Send"}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="gold" className="flex-1">
+                    <Send className="mr-1 h-3 w-3" />Send
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleOpenInGmail}>
+                    <Mail className="mr-2 h-4 w-4" />Open in Gmail
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCopyEmails}>
+                    <ClipboardCopy className="mr-2 h-4 w-4" />Copy Emails to Clipboard
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </DialogContent>

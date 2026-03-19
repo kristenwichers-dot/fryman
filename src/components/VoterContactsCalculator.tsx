@@ -126,17 +126,17 @@ Give me 2-3 brief, specific, actionable insights about my voter contact progress
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-lg bg-secondary/50 p-3 text-center">
-            <MapPin className="h-4 w-4 text-green-500 mx-auto mb-1" />
+            <MapPin className="h-4 w-4 text-primary mx-auto mb-1" />
             <p className="text-lg font-bold">{doorsKnocked.toLocaleString()}</p>
             <p className="text-[10px] text-muted-foreground">Doors Knocked</p>
           </div>
           <div className="rounded-lg bg-secondary/50 p-3 text-center">
-            <Phone className="h-4 w-4 text-pink-500 mx-auto mb-1" />
+            <Phone className="h-4 w-4 text-primary mx-auto mb-1" />
             <p className="text-lg font-bold">{callsMade.toLocaleString()}</p>
             <p className="text-[10px] text-muted-foreground">Calls Made</p>
           </div>
           <div className="rounded-lg bg-secondary/50 p-3 text-center">
-            <Users className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+            <Users className="h-4 w-4 text-primary mx-auto mb-1" />
             <p className="text-lg font-bold">{(contactsNeeded - contactsMade).toLocaleString()}</p>
             <p className="text-[10px] text-muted-foreground">Remaining</p>
           </div>
