@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import CampaignAssistant from "@/components/CampaignAssistant";
+import OnboardingTour from "@/components/OnboardingTour";
 
 const navItems = [
   { to: "/", label: "Home", icon: LayoutDashboard },
@@ -133,6 +134,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Campaign Assistant Chatbot */}
       <CampaignAssistant />
+
+      {/* Onboarding Tour */}
+      <OnboardingTour />
     </div>
   );
 }
