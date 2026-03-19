@@ -134,6 +134,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Campaign Assistant Chatbot */}
       <CampaignAssistant />
+
+      {/* Onboarding Tour */}
+      <OnboardingTour />
     </div>
   );
 }

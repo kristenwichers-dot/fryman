@@ -115,23 +115,65 @@ export default function Fundraising() {
       <Card className="border-primary/20">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
-            <ExternalLink className="h-4 w-4" /> Anedot Integration
+            <ExternalLink className="h-4 w-4" /> Connect Anedot (Auto-Track Donations)
           </CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            Follow these steps to automatically import donations from your Anedot account.
+          </p>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Connect your Anedot account to automatically track donations. In your Anedot dashboard, go to{" "}
-            <strong>Settings → Webhooks</strong> and add this URL:
-          </p>
-          <div className="flex items-center gap-2">
-            <Input value={webhookUrl} readOnly className="text-xs font-mono" />
-            <Button variant="outline" size="sm" onClick={copyWebhookUrl}>
-              <Copy className="h-3 w-3" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Donations will appear here automatically when they're processed through Anedot.
-          </p>
+        <CardContent className="space-y-0">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="step1">
+              <AccordionTrigger className="text-sm py-3">
+                <span className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary text-xs font-bold">1</span>
+                  Log in to your Anedot account
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="text-sm text-muted-foreground pl-8">
+                Go to <strong>anedot.com</strong> and sign in with your campaign's account credentials.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="step2">
+              <AccordionTrigger className="text-sm py-3">
+                <span className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary text-xs font-bold">2</span>
+                  Go to Settings → Webhooks
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="text-sm text-muted-foreground pl-8">
+                In your Anedot dashboard, click <strong>Settings</strong> in the left menu, then find the <strong>Webhooks</strong> section.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="step3">
+              <AccordionTrigger className="text-sm py-3">
+                <span className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary text-xs font-bold">3</span>
+                  Add this webhook URL
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="text-sm text-muted-foreground pl-8 space-y-3">
+                <p>Click <strong>"Add Webhook"</strong> and paste the URL below:</p>
+                <div className="flex items-center gap-2">
+                  <Input value={webhookUrl} readOnly className="text-xs font-mono" />
+                  <Button variant="outline" size="sm" onClick={copyWebhookUrl}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="step4" className="border-b-0">
+              <AccordionTrigger className="text-sm py-3">
+                <span className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary text-xs font-bold">4</span>
+                  Save & you're done!
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="text-sm text-muted-foreground pl-8">
+                Click <strong>Save</strong> in Anedot. From now on, every donation will automatically appear on this page. You can make a small test donation to verify the connection works.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 
