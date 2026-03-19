@@ -171,7 +171,7 @@ export default function PressRelease() {
     const emails = recipients.map(c => c.email).join(",");
     const subject = encodeURIComponent(`Press Release: ${topic || "Campaign Update"}`);
     const body = encodeURIComponent(editor?.getText() || "");
-    window.location.href = `mailto:?bcc=${emails}&subject=${subject}&body=${body}`;
+    window.location.href = `mailto:?bcc=${encodeURIComponent(emails)}&subject=${subject}&body=${body}`;
     toast.success("Opening email client...");
     setShowSendDialog(false);
     setSelectedContacts([]);
@@ -345,6 +345,7 @@ export default function PressRelease() {
             </div>
             <div className="space-y-2">
               <Label>Select Recipients ({selectedContacts.length} selected)</Label>
+              <p className="text-xs text-muted-foreground">Your contacts will be hidden (BCC) so they can't see each other's email addresses.</p>
               {contacts.length === 0 && <p className="text-sm text-muted-foreground">No contacts yet. Add them in the Contacts tab.</p>}
               <div className="max-h-48 overflow-auto space-y-1">
                 {contacts.map((c) => (
@@ -366,10 +367,10 @@ export default function PressRelease() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleOpenInEmail}>
-                    <Mail className="mr-2 h-4 w-4" />Open in Email Client
+                    <Mail className="mr-2 h-4 w-4" />Open in Your Email (Gmail, Outlook, etc.)
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleCopyEmails}>
-                    <ClipboardCopy className="mr-2 h-4 w-4" />Copy Emails to Clipboard
+                    <ClipboardCopy className="mr-2 h-4 w-4" />Copy Email Addresses
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

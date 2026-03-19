@@ -18,6 +18,8 @@ import Analytics from "./pages/Analytics";
 import Volunteers from "./pages/Volunteers";
 import PhoneBanking from "./pages/PhoneBanking";
 import Fundraising from "./pages/Fundraising";
+import Texting from "./pages/Texting";
+import CampaignAdvisor from "./pages/CampaignAdvisor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +68,8 @@ const App = () => (
           <Route path="/debate-prep" element={<AuthGuard><DebatePrep /></AuthGuard>} />
           <Route path="/yard-signs" element={<AuthGuard><YardSigns /></AuthGuard>} />
           <Route path="/fundraising" element={<AuthGuard><Fundraising /></AuthGuard>} />
+          <Route path="/texting" element={<AuthGuard><Texting /></AuthGuard>} />
+          <Route path="/campaign-advisor" element={<AuthGuard><CampaignAdvisor /></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
