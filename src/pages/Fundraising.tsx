@@ -56,7 +56,24 @@ export default function Fundraising() {
     });
     if (error) toast.error(error.message);
     else {
-      toast.success("Donation added!");
+      const amount = parseFloat(manualForm.amount);
+      // Automation: flag high-value donors
+      if (amount > 100) {
+        await (supabase.from as any)("automation_logs").insert({
+          user_id: user.id,
+          automation_type: "high_value_donor",
+          description: `High-value donation: $${amount} from ${manualForm.donor_name}`,
+          metadata: { amount, donor_name: manualForm.donor_name },
+        });
+        await supabase.from("chat_history").insert({
+          user_id: user.id,
+          role: "assistant",
+          content: `📞 Action needed: Call ${manualForm.donor_name} to thank them for their $${amount} donation!`,
+        });
+        toast.success(`Donation added! Don't forget to call ${manualForm.donor_name} to say thank you.`);
+      } else {
+        toast.success("Donation added!");
+      }
       setManualForm({ donor_name: "", donor_email: "", amount: "" });
       setShowManual(false);
       fetchDonations();

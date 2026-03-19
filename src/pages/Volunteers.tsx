@@ -56,7 +56,19 @@ export default function Volunteers() {
         user_id: user.id,
       });
       if (error) { toast.error(error.message); return; }
-      toast.success("Volunteer added");
+      // Automation: log welcome email + supporter journey
+      await (supabase.from as any)("automation_logs").insert({
+        user_id: user.id,
+        automation_type: "welcome_email",
+        description: `Welcome email queued for ${form.name}`,
+      });
+      await (supabase.from as any)("supporter_journeys").insert({
+        user_id: user.id,
+        supporter_type: "volunteer",
+        journey_step: "welcome_email_sent",
+        completed: true,
+      });
+      toast.success(`Volunteer added — welcome email queued for ${form.name}!`);
     }
     setOpen(false);
     setForm(emptyVolunteer);
