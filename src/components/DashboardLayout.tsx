@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Users, MapPin, Calendar, FileText, MessageSquare, LogOut, ChevronLeft, ChevronRight, LayoutDashboard, SignpostBig, Menu, TrendingUp, UserCheck, Phone, DollarSign } from "lucide-react";
+import { Users, MapPin, Calendar, FileText, MessageSquare, LogOut, ChevronLeft, ChevronRight, LayoutDashboard, SignpostBig, Menu, TrendingUp, UserCheck, Phone, DollarSign, MessageCircle, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
