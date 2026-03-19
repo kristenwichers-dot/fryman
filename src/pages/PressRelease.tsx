@@ -58,7 +58,6 @@ export default function PressRelease() {
   // Send dialog
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
-  const [sending, setSending] = useState(false);
 
   const csvRef = useRef<HTMLInputElement>(null);
 
