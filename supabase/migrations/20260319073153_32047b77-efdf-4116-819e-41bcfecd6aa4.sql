@@ -1,0 +1,1 @@
+DROP POLICY "Allow anonymous inserts for webhooks" ON public.donations;

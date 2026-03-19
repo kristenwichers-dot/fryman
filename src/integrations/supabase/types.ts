@@ -82,6 +82,36 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_settings: {
+        Row: {
+          contact_multiplier: number
+          created_at: string
+          expected_turnout: number
+          id: string
+          total_voters: number
+          user_id: string
+          vote_share_needed: number
+        }
+        Insert: {
+          contact_multiplier?: number
+          created_at?: string
+          expected_turnout?: number
+          id?: string
+          total_voters?: number
+          user_id: string
+          vote_share_needed?: number
+        }
+        Update: {
+          contact_multiplier?: number
+          created_at?: string
+          expected_turnout?: number
+          id?: string
+          total_voters?: number
+          user_id?: string
+          vote_share_needed?: number
+        }
+        Relationships: []
+      }
       chat_history: {
         Row: {
           content: string
@@ -102,6 +132,45 @@ export type Database = {
           created_at?: string
           id?: string
           role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      donations: {
+        Row: {
+          amount: number
+          anedot_donation_id: string | null
+          created_at: string
+          donor_email: string | null
+          donor_name: string
+          frequency: string | null
+          id: string
+          raw_payload: Json | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          anedot_donation_id?: string | null
+          created_at?: string
+          donor_email?: string | null
+          donor_name?: string
+          frequency?: string | null
+          id?: string
+          raw_payload?: Json | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          anedot_donation_id?: string | null
+          created_at?: string
+          donor_email?: string | null
+          donor_name?: string
+          frequency?: string | null
+          id?: string
+          raw_payload?: Json | null
+          status?: string | null
           user_id?: string
         }
         Relationships: []

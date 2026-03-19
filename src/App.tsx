@@ -17,6 +17,7 @@ import YardSigns from "./pages/YardSigns";
 import Analytics from "./pages/Analytics";
 import Volunteers from "./pages/Volunteers";
 import PhoneBanking from "./pages/PhoneBanking";
+import Fundraising from "./pages/Fundraising";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/press-release" element={<AuthGuard><PressRelease /></AuthGuard>} />
           <Route path="/debate-prep" element={<AuthGuard><DebatePrep /></AuthGuard>} />
           <Route path="/yard-signs" element={<AuthGuard><YardSigns /></AuthGuard>} />
+          <Route path="/fundraising" element={<AuthGuard><Fundraising /></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
