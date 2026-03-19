@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Search, Trash2, Pencil, ChevronDown, MapPin } from "lucide-react";
+import { Plus, Search, Trash2, Pencil, ChevronDown, MapPin, ArrowLeft, Users } from "lucide-react";
 import CsvImport from "@/components/CsvImport";
 
 interface Voter {
@@ -23,11 +24,19 @@ interface Voter {
   notes: string;
 }
 
+interface CityInfo {
+  city: string;
+  voter_count: number;
+}
+
 const emptyVoter: Omit<Voter, "id"> = {
   last_name: "", first_name: "", street_address: "", city: "", party: "", notes: "",
 };
 
 export default function VoterDatabase() {
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [cityData, setCityData] = useState<CityInfo[]>([]);
+  const [loadingCities, setLoadingCities] = useState(true);
 
   const [voters, setVoters] = useState<Voter[]>([]);
   const [search, setSearch] = useState("");
@@ -39,36 +48,64 @@ export default function VoterDatabase() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
 
-  const fetchVoters = async () => {
-    const { data } = await supabase.from("voters").select("*").order("last_name");
-    if (data) setVoters(data as unknown as Voter[]);
+  const fetchCities = async () => {
+    setLoadingCities(true);
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) { setLoadingCities(false); return; }
+    const { data } = await supabase.rpc("get_door_knocking_cities", { p_user_id: user.id });
+    if (data) {
+      setCityData(data.map((d: any) => ({ city: d.city, voter_count: Number(d.voter_count) })));
+    }
+    setLoadingCities(false);
   };
 
-  useEffect(() => { fetchVoters(); }, []);
+  useEffect(() => { fetchCities(); }, []);
+
+  const fetchVoters = async (city: string) => {
+    const allVoters: Voter[] = [];
+    let from = 0;
+    const batchSize = 1000;
+    while (true) {
+      let query = supabase.from("voters").select("*").eq("city", city).order("last_name").range(from, from + batchSize - 1);
+      const { data } = await query;
+      if (!data || data.length === 0) break;
+      allVoters.push(...(data as unknown as Voter[]));
+      if (data.length < batchSize) break;
+      from += batchSize;
+    }
+    setVoters(allVoters);
+  };
+
+  const handleCityClick = (city: string) => {
+    setSelectedCity(city);
+    setVoters([]);
+    setSearch("");
+    setFilterParty("all");
+    setSelectedIds(new Set());
+    fetchVoters(city);
+  };
+
+  const handleBackToCities = () => {
+    setSelectedCity(null);
+    setVoters([]);
+    setSelectedIds(new Set());
+    fetchCities();
+  };
 
   const handleSave = async () => {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
     if (editingId) {
       const { error } = await supabase.from("voters").update({
-        last_name: form.last_name,
-        first_name: form.first_name,
-        street_address: form.street_address,
-        city: form.city,
-        party: form.party,
-        notes: form.notes,
+        last_name: form.last_name, first_name: form.first_name, street_address: form.street_address,
+        city: form.city, party: form.party, notes: form.notes,
       }).eq("id", editingId);
       if (error) { toast.error(error.message); return; }
       toast.success("Voter updated");
     } else {
       const { error } = await supabase.from("voters").insert({
-        last_name: form.last_name,
-        first_name: form.first_name,
-        street_address: form.street_address,
-        city: form.city,
-        party: form.party,
-        notes: form.notes,
-        user_id: user.id,
+        last_name: form.last_name, first_name: form.first_name, street_address: form.street_address,
+        city: form.city || selectedCity || "", party: form.party, notes: form.notes, user_id: user.id,
       });
       if (error) { toast.error(error.message); return; }
       toast.success("Voter added");
@@ -76,13 +113,15 @@ export default function VoterDatabase() {
     setOpen(false);
     setForm(emptyVoter);
     setEditingId(null);
-    fetchVoters();
+    if (selectedCity) fetchVoters(selectedCity);
+    fetchCities();
   };
 
   const handleDelete = async (id: string) => {
     await supabase.from("voters").delete().eq("id", id);
     toast.success("Voter deleted");
-    fetchVoters();
+    if (selectedCity) fetchVoters(selectedCity);
+    fetchCities();
   };
 
   const toggleSelect = (id: string) => {
@@ -94,11 +133,8 @@ export default function VoterDatabase() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === filtered.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filtered.map((v) => v.id)));
-    }
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map((v) => v.id)));
   };
 
   const handleMassDelete = async () => {
@@ -108,7 +144,8 @@ export default function VoterDatabase() {
     if (error) { toast.error(error.message); return; }
     toast.success(`Deleted ${ids.length} voter(s)`);
     setSelectedIds(new Set());
-    fetchVoters();
+    if (selectedCity) fetchVoters(selectedCity);
+    fetchCities();
   };
 
   const handleDeleteAll = async () => {
@@ -118,7 +155,8 @@ export default function VoterDatabase() {
     if (error) { toast.error(error.message); return; }
     toast.success("All voters deleted");
     setSelectedIds(new Set());
-    fetchVoters();
+    setSelectedCity(null);
+    fetchCities();
   };
 
   const startEdit = (v: Voter) => {
@@ -130,23 +168,131 @@ export default function VoterDatabase() {
   const filtered = voters
     .filter((v) => {
       const text = `${v.last_name} ${v.first_name} ${v.street_address} ${v.city}`.toLowerCase();
-      const matchSearch = text.includes(search.toLowerCase());
-      const matchParty = filterParty === "all" || v.party === filterParty;
-      return matchSearch && matchParty;
+      return text.includes(search.toLowerCase()) && (filterParty === "all" || v.party === filterParty);
     })
-    .sort((a, b) => {
-      const aVal = (a[sortBy] || "").toLowerCase();
-      const bVal = (b[sortBy] || "").toLowerCase();
-      return aVal.localeCompare(bVal);
-    });
+    .sort((a, b) => (a[sortBy] || "").toLowerCase().localeCompare((b[sortBy] || "").toLowerCase()));
 
+  const totalVoters = cityData.reduce((sum, c) => sum + c.voter_count, 0);
+
+  // ---- CITY OVERVIEW ----
+  if (!selectedCity) {
+    return (
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold">Voter Database</h1>
+            <p className="text-sm text-muted-foreground mt-1">{totalVoters.toLocaleString()} total voters across {cityData.length} cities</p>
+          </div>
+          <div className="flex gap-2">
+            <CsvImport onComplete={() => { fetchCities(); }} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Actions <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />Add Voter
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteAllOpen(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" />Delete All
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {loadingCities ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : cityData.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>No voters yet. Import a CSV or add voters manually.</p>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {cityData.map((c) => (
+              <Card
+                key={c.city}
+                className="cursor-pointer transition-all hover:border-primary/40 hover:shadow-md"
+                onClick={() => handleCityClick(c.city)}
+              >
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">{c.city}</p>
+                      <p className="text-sm text-muted-foreground">{c.voter_count.toLocaleString()} voters</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Dialogs shared with voter view */}
+        <AlertDialog open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete all voters?</AlertDialogTitle>
+              <AlertDialogDescription>This will permanently delete every voter in your database. This cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete All</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyVoter); setEditingId(null); } }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>{editingId ? "Edit Voter" : "Add Voter"}</DialogTitle></DialogHeader>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1"><Label>Last Name</Label><Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} /></div>
+              <div className="space-y-1"><Label>First Name</Label><Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} /></div>
+              <div className="space-y-1"><Label>Street Address</Label><Input value={form.street_address} onChange={(e) => setForm({ ...form, street_address: e.target.value })} /></div>
+              <div className="space-y-1"><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+              <div className="sm:col-span-2 space-y-1"><Label>Party Affiliation</Label>
+                <Select value={form.party} onValueChange={(v) => setForm({ ...form, party: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Democrat">Democrat</SelectItem>
+                    <SelectItem value="Republican">Republican</SelectItem>
+                    <SelectItem value="Independent">Independent</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-2 space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} placeholder="Add notes about this voter..." /></div>
+            </div>
+            <Button variant="gold" className="mt-4 w-full" onClick={handleSave}>Save</Button>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  // ---- VOTER TABLE FOR SELECTED CITY ----
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-xl md:text-2xl font-bold">Voter Database</h1>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={handleBackToCities}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold">{selectedCity}</h1>
+            <p className="text-sm text-muted-foreground">{filtered.length} voters</p>
+          </div>
+        </div>
         <div className="flex gap-2">
-          <CsvImport onComplete={fetchVoters} />
+          <CsvImport onComplete={() => { fetchVoters(selectedCity); fetchCities(); }} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -154,53 +300,11 @@ export default function VoterDatabase() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setOpen(true)}>
+              <DropdownMenuItem onClick={() => { setForm({ ...emptyVoter, city: selectedCity }); setOpen(true); }}>
                 <Plus className="mr-2 h-4 w-4" />Add Voter
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => setDeleteAllOpen(true)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />Delete All
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <AlertDialog open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete all voters?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete every voter in your database. This cannot be undone.</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete All</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyVoter); setEditingId(null); } }}>
-            <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>{editingId ? "Edit Voter" : "Add Voter"}</DialogTitle></DialogHeader>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1"><Label>Last Name</Label><Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} /></div>
-                <div className="space-y-1"><Label>First Name</Label><Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} /></div>
-                <div className="space-y-1"><Label>Street Address</Label><Input value={form.street_address} onChange={(e) => setForm({ ...form, street_address: e.target.value })} /></div>
-                <div className="space-y-1"><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-                <div className="sm:col-span-2 space-y-1"><Label>Party Affiliation</Label>
-                  <Select value={form.party} onValueChange={(v) => setForm({ ...form, party: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Democrat">Democrat</SelectItem>
-                      <SelectItem value="Republican">Republican</SelectItem>
-                      <SelectItem value="Independent">Independent</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="sm:col-span-2 space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} placeholder="Add notes about this voter..." /></div>
-              </div>
-              <Button variant="gold" className="mt-4 w-full" onClick={handleSave}>Save</Button>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
@@ -265,9 +369,7 @@ export default function VoterDatabase() {
           <tbody className="divide-y divide-border">
             {filtered.map((v) => (
               <tr key={v.id} className="hover:bg-secondary/50 transition-colors">
-                <td className="px-4 py-3">
-                  <Checkbox checked={selectedIds.has(v.id)} onCheckedChange={() => toggleSelect(v.id)} />
-                </td>
+                <td className="px-4 py-3"><Checkbox checked={selectedIds.has(v.id)} onCheckedChange={() => toggleSelect(v.id)} /></td>
                 <td className="px-4 py-3 font-medium">{v.last_name}</td>
                 <td className="px-4 py-3">{v.first_name}</td>
                 <td className="px-4 py-3 text-muted-foreground">{v.street_address}</td>
@@ -297,37 +399,51 @@ export default function VoterDatabase() {
           filtered.map((v) => (
             <div key={v.id} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={selectedIds.has(v.id)}
-                  onCheckedChange={() => toggleSelect(v.id)}
-                  className="mt-1"
-                />
+                <Checkbox checked={selectedIds.has(v.id)} onCheckedChange={() => toggleSelect(v.id)} className="mt-1" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold">{v.last_name}, {v.first_name}</p>
                   <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
                     <MapPin className="h-3 w-3 shrink-0" />
                     <span className="truncate">{v.street_address}, {v.city}</span>
                   </div>
-                  {v.party && (
-                    <p className="text-xs text-muted-foreground mt-1">Party: {v.party}</p>
-                  )}
-                  {v.notes && (
-                    <p className="text-xs text-muted-foreground mt-1 italic truncate">{v.notes}</p>
-                  )}
+                  {v.party && <p className="text-xs text-muted-foreground mt-1">Party: {v.party}</p>}
+                  {v.notes && <p className="text-xs text-muted-foreground mt-1 italic truncate">{v.notes}</p>}
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(v)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(v.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(v)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </div>
               </div>
             </div>
           ))
         )}
       </div>
+
+      {/* Edit/Add Dialog */}
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyVoter); setEditingId(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{editingId ? "Edit Voter" : "Add Voter"}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1"><Label>Last Name</Label><Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} /></div>
+            <div className="space-y-1"><Label>First Name</Label><Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Street Address</Label><Input value={form.street_address} onChange={(e) => setForm({ ...form, street_address: e.target.value })} /></div>
+            <div className="space-y-1"><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+            <div className="sm:col-span-2 space-y-1"><Label>Party Affiliation</Label>
+              <Select value={form.party} onValueChange={(v) => setForm({ ...form, party: v })}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Democrat">Democrat</SelectItem>
+                  <SelectItem value="Republican">Republican</SelectItem>
+                  <SelectItem value="Independent">Independent</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2 space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} placeholder="Add notes about this voter..." /></div>
+          </div>
+          <Button variant="gold" className="mt-4 w-full" onClick={handleSave}>Save</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

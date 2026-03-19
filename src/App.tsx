@@ -16,9 +16,8 @@ import DebatePrep from "./pages/DebatePrep";
 import YardSigns from "./pages/YardSigns";
 import Analytics from "./pages/Analytics";
 import Volunteers from "./pages/Volunteers";
-import PhoneBanking from "./pages/PhoneBanking";
+import Outreach from "./pages/Outreach";
 import Fundraising from "./pages/Fundraising";
-import Texting from "./pages/Texting";
 import CampaignAdvisor from "./pages/CampaignAdvisor";
 import NotFound from "./pages/NotFound";
 
@@ -61,14 +60,13 @@ const App = () => (
           <Route path="/analytics" element={<AuthGuard><Analytics /></AuthGuard>} />
           <Route path="/voters" element={<AuthGuard><VoterDatabase /></AuthGuard>} />
           <Route path="/door-knocking" element={<AuthGuard><DoorKnocking /></AuthGuard>} />
-          <Route path="/phone-banking" element={<AuthGuard><PhoneBanking /></AuthGuard>} />
+          <Route path="/outreach" element={<AuthGuard><Outreach /></AuthGuard>} />
           <Route path="/volunteers" element={<AuthGuard><Volunteers /></AuthGuard>} />
           <Route path="/events" element={<AuthGuard><EventsScheduler /></AuthGuard>} />
           <Route path="/press-release" element={<AuthGuard><PressRelease /></AuthGuard>} />
           <Route path="/debate-prep" element={<AuthGuard><DebatePrep /></AuthGuard>} />
           <Route path="/yard-signs" element={<AuthGuard><YardSigns /></AuthGuard>} />
           <Route path="/fundraising" element={<AuthGuard><Fundraising /></AuthGuard>} />
-          <Route path="/texting" element={<AuthGuard><Texting /></AuthGuard>} />
           <Route path="/campaign-advisor" element={<AuthGuard><CampaignAdvisor /></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -78,4 +76,3 @@ const App = () => (
 );
 
 export default App;
-

@@ -1,52 +1,100 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Users, MapPin, Calendar, FileText, MessageSquare, ArrowRight, SignpostBig, TrendingUp, UserCheck, Phone, DollarSign, MessageCircle, GraduationCap, Zap } from "lucide-react";
+import { Users, MapPin, Calendar, FileText, ArrowRight, SignpostBig, TrendingUp, UserCheck, Phone, DollarSign, GraduationCap, Zap, ClipboardList, CalendarCheck, Mail, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 const sections = [
   { to: "/analytics", icon: TrendingUp, title: "Analytics", desc: "View campaign metrics, voter stats, and track your overall progress." },
   { to: "/voters", icon: Users, title: "Voter Database", desc: "Manage contacts, run AI sentiment analysis, and track community concerns." },
   { to: "/door-knocking", icon: MapPin, title: "Door Knocking", desc: "Plan optimized canvassing routes with an interactive map and status tracking." },
   { to: "/yard-signs", icon: SignpostBig, title: "Yard Sign List", desc: "Track yard sign requests and mark them delivered with a simple checklist." },
-  { to: "/events", icon: Calendar, title: "Events & AI Scheduler", desc: "Organize campaign events and let AI optimize your daily schedule." },
+  { to: "/events", icon: Calendar, title: "Events", desc: "Organize campaign events and let AI optimize your daily schedule." },
   { to: "/press-release", icon: FileText, title: "Press Release Generator", desc: "Draft professional press releases with AI and edit in a rich text editor." },
-  { to: "/debate-prep", icon: MessageSquare, title: "Debate Prep Bot", desc: "Practice debates against a configurable AI opponent to sharpen your arguments." },
-  { to: "/phone-banking", icon: Phone, title: "Phone Banking", desc: "Call voters with customizable scripts and track call outcomes." },
+  { to: "/outreach", icon: Phone, title: "Voter Outreach", desc: "Call voters with scripts, build text campaigns, and export for ContactsHelper." },
   { to: "/volunteers", icon: UserCheck, title: "Volunteer Management", desc: "Track volunteers, assign tasks, and log their hours." },
   { to: "/fundraising", icon: DollarSign, title: "Fundraising", desc: "Track donations, connect Anedot, and view fundraising progress." },
-  { to: "/texting", icon: MessageCircle, title: "P2P Texting", desc: "Build text campaigns, filter voter universes, and export for ContactsHelper." },
   { to: "/campaign-advisor", icon: GraduationCap, title: "Campaign Advisor", desc: "Get expert AI advice on Ohio election compliance, strategy, and fundraising." },
 ];
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.35 } } };
 
+interface BriefingTask {
+  icon: typeof Calendar;
+  label: string;
+  detail: string;
+}
+
 interface AutoSummary { welcome_email: number; high_value_donor: number; }
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const [autoSummary, setAutoSummary] = useState<AutoSummary>({ welcome_email: 0, high_value_donor: 0 });
+  const [briefingTasks, setBriefingTasks] = useState<BriefingTask[]>([]);
 
   useEffect(() => {
-    const fetchAutomations = async () => {
+    const fetchData = async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const { data } = await (supabase.from as any)("automation_logs")
-        .select("automation_type")
-        .gte("created_at", today.toISOString());
-      if (data) {
-        const summary: AutoSummary = { welcome_email: 0, high_value_donor: 0 };
-        data.forEach((r: any) => {
+      const todayStr = format(today, "yyyy-MM-dd");
+
+      // Fetch automation logs & events in parallel
+      const [autoRes, eventsRes] = await Promise.all([
+        (supabase.from as any)("automation_logs")
+          .select("automation_type, description")
+          .gte("created_at", today.toISOString()),
+        supabase.from("events")
+          .select("title, date, time, location")
+          .eq("date", todayStr),
+      ]);
+
+      // Automation summary
+      const summary: AutoSummary = { welcome_email: 0, high_value_donor: 0 };
+      if (autoRes.data) {
+        autoRes.data.forEach((r: any) => {
           if (r.automation_type === "welcome_email") summary.welcome_email++;
           if (r.automation_type === "high_value_donor") summary.high_value_donor++;
         });
-        setAutoSummary(summary);
       }
+      setAutoSummary(summary);
+
+      // Build briefing tasks (top 3)
+      const tasks: BriefingTask[] = [];
+
+      // Today's events
+      if (eventsRes.data) {
+        eventsRes.data.forEach((e: any) => {
+          tasks.push({
+            icon: CalendarCheck,
+            label: e.title,
+            detail: [e.time, e.location].filter(Boolean).join(" — ") || "Today",
+          });
+        });
+      }
+
+      // Automation-driven tasks
+      if (summary.high_value_donor > 0) {
+        tasks.push({
+          icon: Star,
+          label: `Follow up with ${summary.high_value_donor} high-value donor${summary.high_value_donor > 1 ? "s" : ""}`,
+          detail: "Flagged today — personal outreach recommended",
+        });
+      }
+      if (summary.welcome_email > 0) {
+        tasks.push({
+          icon: Mail,
+          label: `${summary.welcome_email} welcome email${summary.welcome_email > 1 ? "s" : ""} queued`,
+          detail: "New supporters added today",
+        });
+      }
+
+      setBriefingTasks(tasks.slice(0, 3));
     };
-    fetchAutomations();
+    fetchData();
   }, []);
 
   const hasAutomations = autoSummary.welcome_email > 0 || autoSummary.high_value_donor > 0;
@@ -59,6 +107,34 @@ export default function LandingPage() {
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">Cassaundra Fryman</h1>
         <p className="mt-3 text-lg md:text-xl text-accent font-semibold">for Huron County Commissioner</p>
         <p className="mt-4 text-muted-foreground leading-relaxed">Your all-in-one campaign headquarters — manage voters, plan canvassing routes, generate press releases, and prepare for debates, all powered by AI.</p>
+      </motion.div>
+
+      {/* Daily Briefing */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }} className="w-full max-w-5xl mb-8">
+        <div className="flex items-center gap-2 mb-3">
+          <ClipboardList className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground">Daily Briefing — Top Tasks</h2>
+        </div>
+        {briefingTasks.length > 0 ? (
+          <div className="space-y-2">
+            {briefingTasks.map((task, i) => (
+              <Card key={i}>
+                <CardContent className="flex items-center gap-4 py-3 px-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">
+                    {i + 1}
+                  </div>
+                  <task.icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{task.label}</p>
+                    <p className="text-xs text-muted-foreground truncate">{task.detail}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No tasks for today — enjoy the day! 🎉</p>
+        )}
       </motion.div>
 
       {/* Active Automations Widget */}
