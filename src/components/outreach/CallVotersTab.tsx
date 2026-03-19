@@ -36,7 +36,7 @@ const outcomes = [
   { value: "wrong_number", label: "Wrong Number", icon: Phone, color: "text-muted-foreground" },
 ];
 
-export default function PhoneBanking() {
+export default function CallVotersTab() {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [callNotes, setCallNotes] = useState("");
@@ -48,8 +48,7 @@ export default function PhoneBanking() {
   const [filterParty, setFilterParty] = useState("all");
 
   const fetchVoters = async () => {
-    let query = supabase.from("voters").select("*").not("phone", "is", null).neq("phone", "").order("last_name");
-    const { data } = await query;
+    const { data } = await supabase.from("voters").select("*").not("phone", "is", null).neq("phone", "").order("last_name");
     if (data) setVoters(data as Voter[]);
   };
 
@@ -123,27 +122,21 @@ export default function PhoneBanking() {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Phone className="h-6 w-6 text-primary" />
-          <h1 className="text-xl md:text-2xl font-bold">Phone Banking</h1>
-        </div>
-        <div className="flex gap-2">
-          <Select value={filterParty} onValueChange={(v) => { setFilterParty(v); setCurrentIndex(0); }}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Parties</SelectItem>
-              <SelectItem value="Democrat">Democrat</SelectItem>
-              <SelectItem value="Republican">Republican</SelectItem>
-              <SelectItem value="Independent">Independent</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon" onClick={() => setScriptDialogOpen(true)}>
-            <Settings className="h-4 w-4" />
-          </Button>
-        </div>
+    <div className="space-y-6">
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2">
+        <Select value={filterParty} onValueChange={(v) => { setFilterParty(v); setCurrentIndex(0); }}>
+          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Parties</SelectItem>
+            <SelectItem value="Democrat">Democrat</SelectItem>
+            <SelectItem value="Republican">Republican</SelectItem>
+            <SelectItem value="Independent">Independent</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="icon" onClick={() => setScriptDialogOpen(true)}>
+          <Settings className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Stats */}
@@ -201,7 +194,6 @@ export default function PhoneBanking() {
                 </div>
               )}
 
-              {/* Call Notes */}
               <div className="pt-2">
                 <Label>Call Notes</Label>
                 <Textarea
@@ -213,7 +205,6 @@ export default function PhoneBanking() {
                 />
               </div>
 
-              {/* Outcome Buttons */}
               <div className="grid grid-cols-2 gap-2 pt-2">
                 {outcomes.map((o) => (
                   <Button
@@ -228,7 +219,6 @@ export default function PhoneBanking() {
                 ))}
               </div>
 
-              {/* Skip Button */}
               <Button
                 variant="ghost"
                 className="w-full"
