@@ -104,6 +104,11 @@ export default function LandingPage() {
         </p>
       </motion.div>
 
+      {/* Voter Calculator */}
+      <div className="w-full max-w-md mb-10">
+        <VoterContactsCalculator />
+      </div>
+
       {/* Section Cards */}
       <motion.div
         variants={container}
