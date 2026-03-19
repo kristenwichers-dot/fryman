@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Sparkles, Copy, Save, Settings, Send, Plus, Trash2, Upload, X } from "lucide-react";
+import { Sparkles, Copy, Save, Settings, Send, Plus, Trash2, Upload, X, Mail, ClipboardCopy } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 
@@ -57,7 +58,6 @@ export default function PressRelease() {
   // Send dialog
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
-  const [sending, setSending] = useState(false);
 
   const csvRef = useRef<HTMLInputElement>(null);
 
@@ -165,29 +165,25 @@ export default function PressRelease() {
     if (csvRef.current) csvRef.current.value = "";
   };
 
-  // Send press release
-  const handleSend = async () => {
+  const handleOpenInGmail = () => {
     if (selectedContacts.length === 0) { toast.error("Select at least one contact"); return; }
-    setSending(true);
-    try {
-      const recipients = contacts.filter(c => selectedContacts.includes(c.id));
-      const { data, error } = await supabase.functions.invoke("send-press-release", {
-        body: {
-          to: recipients.map(c => c.email),
-          subject: `Press Release: ${topic || "Campaign Update"}`,
-          htmlContent: editor?.getHTML() || "",
-          fromName: "Campaign Team",
-        },
-      });
-      if (error) throw error;
-      toast.success(`Sent to ${recipients.length} contacts!`);
-      setShowSendDialog(false);
-      setSelectedContacts([]);
-    } catch (err: any) {
-      toast.error(err.message || "Send failed");
-    } finally {
-      setSending(false);
-    }
+    const recipients = contacts.filter(c => selectedContacts.includes(c.id));
+    const emails = recipients.map(c => c.email).join(",");
+    const subject = encodeURIComponent(`Press Release: ${topic || "Campaign Update"}`);
+    const body = encodeURIComponent(editor?.getText() || "");
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(emails)}&su=${subject}&body=${body}`;
+    window.open(url, "_blank");
+    toast.success("Opened in Gmail!");
+    setShowSendDialog(false);
+    setSelectedContacts([]);
+  };
+
+  const handleCopyEmails = () => {
+    if (selectedContacts.length === 0) { toast.error("Select at least one contact"); return; }
+    const recipients = contacts.filter(c => selectedContacts.includes(c.id));
+    const emails = recipients.map(c => c.email).join(", ");
+    navigator.clipboard.writeText(emails);
+    toast.success(`Copied ${recipients.length} email addresses!`);
   };
 
   const toggleContact = (id: string) => {
@@ -363,9 +359,21 @@ export default function PressRelease() {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setSelectedContacts(contacts.map(c => c.id))}>Select All</Button>
-              <Button variant="gold" className="flex-1" onClick={handleSend} disabled={sending}>
-                <Send className="mr-1 h-3 w-3" />{sending ? "Sending..." : "Send"}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="gold" className="flex-1">
+                    <Send className="mr-1 h-3 w-3" />Send
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleOpenInGmail}>
+                    <Mail className="mr-2 h-4 w-4" />Open in Gmail
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCopyEmails}>
+                    <ClipboardCopy className="mr-2 h-4 w-4" />Copy Emails to Clipboard
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </DialogContent>

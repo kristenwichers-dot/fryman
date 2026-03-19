@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Users, MapPin, Calendar, FileText, MessageSquare, ArrowRight, SignpostBig, TrendingUp, UserCheck, Phone, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import VoterContactsCalculator from "@/components/VoterContactsCalculator";
+
 
 const sections = [
   {
@@ -103,11 +103,6 @@ export default function LandingPage() {
           generate press releases, and prepare for debates, all powered by AI.
         </p>
       </motion.div>
-
-      {/* Voter Calculator */}
-      <div className="w-full max-w-md mb-10">
-        <VoterContactsCalculator />
-      </div>
 
       {/* Section Cards */}
       <motion.div

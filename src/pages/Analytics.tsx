@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, MapPin, SignpostBig, Calendar, Phone, UserCheck, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
+import VoterContactsCalculator from "@/components/VoterContactsCalculator";
 
 interface Stats {
   totalVoters: number;
@@ -117,6 +118,11 @@ export default function Analytics() {
             </Card>
           </motion.div>
         ))}
+      </div>
+
+      {/* Voter Contact Goal */}
+      <div className="max-w-lg">
+        <VoterContactsCalculator />
       </div>
 
       {/* Voters by Party */}
