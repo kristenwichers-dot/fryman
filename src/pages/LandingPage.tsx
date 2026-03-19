@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Users, MapPin, Calendar, FileText, MessageSquare, ArrowRight, SignpostBig, TrendingUp, UserCheck, Phone } from "lucide-react";
+import { Users, MapPin, Calendar, FileText, MessageSquare, ArrowRight, SignpostBig, TrendingUp, UserCheck, Phone, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import VoterContactsCalculator from "@/components/VoterContactsCalculator";
 
 const sections = [
   {
