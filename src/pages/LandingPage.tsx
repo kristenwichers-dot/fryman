@@ -59,6 +59,12 @@ const sections = [
     title: "Volunteer Management",
     desc: "Track volunteers, assign tasks, and log their hours.",
   },
+  {
+    to: "/fundraising",
+    icon: DollarSign,
+    title: "Fundraising",
+    desc: "Track donations, connect Anedot, and view fundraising progress.",
+  },
 ];
 
 const container = {
