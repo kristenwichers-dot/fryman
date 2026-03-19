@@ -367,10 +367,10 @@ export default function PressRelease() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleOpenInEmail}>
-                    <Mail className="mr-2 h-4 w-4" />Open in Email Client
+                    <Mail className="mr-2 h-4 w-4" />Open in Your Email (Gmail, Outlook, etc.)
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleCopyEmails}>
-                    <ClipboardCopy className="mr-2 h-4 w-4" />Copy Emails to Clipboard
+                    <ClipboardCopy className="mr-2 h-4 w-4" />Copy Email Addresses
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
