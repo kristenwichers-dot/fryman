@@ -17,6 +17,7 @@ import YardSigns from "./pages/YardSigns";
 import Analytics from "./pages/Analytics";
 import Volunteers from "./pages/Volunteers";
 import PhoneBanking from "./pages/PhoneBanking";
+import Fundraising from "./pages/Fundraising";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
