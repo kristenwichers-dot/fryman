@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_logs: {
+        Row: {
+          automation_type: string
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          automation_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          automation_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       call_logs: {
         Row: {
           called_at: string
@@ -346,6 +373,72 @@ export type Database = {
           tone?: string | null
           topic?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      supporter_journeys: {
+        Row: {
+          completed: boolean
+          created_at: string
+          id: string
+          journey_step: string
+          supporter_id: string | null
+          supporter_type: string
+          triggered_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          journey_step?: string
+          supporter_id?: string | null
+          supporter_type?: string
+          triggered_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          journey_step?: string
+          supporter_id?: string | null
+          supporter_type?: string
+          triggered_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      texting_campaigns: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          script_template: string
+          status: string
+          target_city: string | null
+          target_party: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string
+          script_template?: string
+          status?: string
+          target_city?: string | null
+          target_party?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          script_template?: string
+          status?: string
+          target_city?: string | null
+          target_party?: string | null
           user_id?: string
         }
         Relationships: []
