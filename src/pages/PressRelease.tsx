@@ -171,7 +171,7 @@ export default function PressRelease() {
     const emails = recipients.map(c => c.email).join(",");
     const subject = encodeURIComponent(`Press Release: ${topic || "Campaign Update"}`);
     const body = encodeURIComponent(editor?.getText() || "");
-    window.location.href = `mailto:?bcc=${emails}&subject=${subject}&body=${body}`;
+    window.location.href = `mailto:?bcc=${encodeURIComponent(emails)}&subject=${subject}&body=${body}`;
     toast.success("Opening email client...");
     setShowSendDialog(false);
     setSelectedContacts([]);
