@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Users, MapPin, Calendar, FileText, MessageSquare, LogOut, ChevronLeft, ChevronRight, LayoutDashboard, SignpostBig, Menu, TrendingUp, UserCheck, Phone } from "lucide-react";
+import { Users, MapPin, Calendar, FileText, MessageSquare, LogOut, ChevronLeft, ChevronRight, LayoutDashboard, SignpostBig, Menu, TrendingUp, UserCheck, Phone, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import CampaignAssistant from "@/components/CampaignAssistant";
 
 const navItems = [
   { to: "/", label: "Home", icon: LayoutDashboard },
@@ -17,6 +18,7 @@ const navItems = [
   { to: "/debate-prep", label: "Debate Prep", icon: MessageSquare },
   { to: "/phone-banking", label: "Phone Banking", icon: Phone },
   { to: "/volunteers", label: "Volunteers", icon: UserCheck },
+  { to: "/fundraising", label: "Fundraising", icon: DollarSign },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
