@@ -345,6 +345,7 @@ export default function PressRelease() {
             </div>
             <div className="space-y-2">
               <Label>Select Recipients ({selectedContacts.length} selected)</Label>
+              <p className="text-xs text-muted-foreground">Your contacts will be hidden (BCC) so they can't see each other's email addresses.</p>
               {contacts.length === 0 && <p className="text-sm text-muted-foreground">No contacts yet. Add them in the Contacts tab.</p>}
               <div className="max-h-48 overflow-auto space-y-1">
                 {contacts.map((c) => (
