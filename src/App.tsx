@@ -68,6 +68,8 @@ const App = () => (
           <Route path="/debate-prep" element={<AuthGuard><DebatePrep /></AuthGuard>} />
           <Route path="/yard-signs" element={<AuthGuard><YardSigns /></AuthGuard>} />
           <Route path="/fundraising" element={<AuthGuard><Fundraising /></AuthGuard>} />
+          <Route path="/texting" element={<AuthGuard><Texting /></AuthGuard>} />
+          <Route path="/campaign-advisor" element={<AuthGuard><CampaignAdvisor /></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

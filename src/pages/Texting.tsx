@@ -64,7 +64,7 @@ export default function Texting() {
     setSaving(true);
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) { setSaving(false); return; }
-    const { error } = await supabase.from("texting_campaigns").insert({
+    const { error } = await (supabase.from as any)("texting_campaigns").insert({
       user_id: user.id,
       name,
       script_template: script,

@@ -20,6 +20,8 @@ const navItems = [
   { to: "/phone-banking", label: "Phone Banking", icon: Phone },
   { to: "/volunteers", label: "Volunteers", icon: UserCheck },
   { to: "/fundraising", label: "Fundraising", icon: DollarSign },
+  { to: "/texting", label: "Texting", icon: MessageCircle },
+  { to: "/campaign-advisor", label: "Campaign Advisor", icon: GraduationCap },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
