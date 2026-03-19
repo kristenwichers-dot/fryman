@@ -120,6 +120,11 @@ export default function Analytics() {
         ))}
       </div>
 
+      {/* Voter Contact Goal */}
+      <div className="max-w-lg">
+        <VoterContactsCalculator />
+      </div>
+
       {/* Voters by Party */}
       {stats.votersByParty.length > 0 && (
         <Card>
