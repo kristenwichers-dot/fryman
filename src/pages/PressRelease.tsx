@@ -166,29 +166,25 @@ export default function PressRelease() {
     if (csvRef.current) csvRef.current.value = "";
   };
 
-  // Send press release
-  const handleSend = async () => {
+  const handleOpenInGmail = () => {
     if (selectedContacts.length === 0) { toast.error("Select at least one contact"); return; }
-    setSending(true);
-    try {
-      const recipients = contacts.filter(c => selectedContacts.includes(c.id));
-      const { data, error } = await supabase.functions.invoke("send-press-release", {
-        body: {
-          to: recipients.map(c => c.email),
-          subject: `Press Release: ${topic || "Campaign Update"}`,
-          htmlContent: editor?.getHTML() || "",
-          fromName: "Campaign Team",
-        },
-      });
-      if (error) throw error;
-      toast.success(`Sent to ${recipients.length} contacts!`);
-      setShowSendDialog(false);
-      setSelectedContacts([]);
-    } catch (err: any) {
-      toast.error(err.message || "Send failed");
-    } finally {
-      setSending(false);
-    }
+    const recipients = contacts.filter(c => selectedContacts.includes(c.id));
+    const emails = recipients.map(c => c.email).join(",");
+    const subject = encodeURIComponent(`Press Release: ${topic || "Campaign Update"}`);
+    const body = encodeURIComponent(editor?.getText() || "");
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(emails)}&su=${subject}&body=${body}`;
+    window.open(url, "_blank");
+    toast.success("Opened in Gmail!");
+    setShowSendDialog(false);
+    setSelectedContacts([]);
+  };
+
+  const handleCopyEmails = () => {
+    if (selectedContacts.length === 0) { toast.error("Select at least one contact"); return; }
+    const recipients = contacts.filter(c => selectedContacts.includes(c.id));
+    const emails = recipients.map(c => c.email).join(", ");
+    navigator.clipboard.writeText(emails);
+    toast.success(`Copied ${recipients.length} email addresses!`);
   };
 
   const toggleContact = (id: string) => {
