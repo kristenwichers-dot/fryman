@@ -150,11 +150,47 @@ export type Database = {
           },
         ]
       }
+      event_attachments: {
+        Row: {
+          created_at: string
+          event_id: string
+          file_name: string
+          file_path: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attachments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
           date: string
           description: string | null
+          end_time: string | null
           id: string
           location: string | null
           time: string | null
@@ -166,6 +202,7 @@ export type Database = {
           created_at?: string
           date?: string
           description?: string | null
+          end_time?: string | null
           id?: string
           location?: string | null
           time?: string | null
@@ -177,11 +214,39 @@ export type Database = {
           created_at?: string
           date?: string
           description?: string | null
+          end_time?: string | null
           id?: string
           location?: string | null
           time?: string | null
           title?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      media_contacts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          outlet: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          outlet?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          outlet?: string | null
           user_id?: string
         }
         Relationships: []
